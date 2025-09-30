@@ -31,17 +31,17 @@
 
 ## Phase 3.1: Setup & Project Structure
 
-- [ ] **T001** Create project directory structure per plan.md
+- [x] **T001** Create project directory structure per plan.md
   - Create: `src/models/`, `src/parsers/`, `src/extractors/`, `src/ui/`, `src/controllers/`, `src/services/`
   - Create: `src/main.py` (placeholder)
   - Verify: All directories exist and are empty
 
-- [ ] **T002** Initialize Python project dependencies
+- [x] **T002** Initialize Python project dependencies
   - Create: `requirements.txt` with dependencies (tkinterdnd2>=0.3.0, PyMuPDF>=1.23.0, python-docx>=1.1.0)
   - Note: tkinter is built-in, no need to list
   - Verify: `pip install -r requirements.txt` succeeds
 
-- [ ] **T003** [P] Configure linting with ruff
+- [x] **T003** [P] Configure linting with ruff
   - Create: `pyproject.toml` or `ruff.toml` with Python 3.10+ settings
   - Configure: line length 100, exclude build artifacts
   - Verify: `ruff check .` runs without errors
@@ -50,52 +50,52 @@
 
 ## Phase 3.2: Data Models
 
-- [ ] **T004** [P] Document model in `src/models/document.py`
+- [x] **T004** [P] Document model in `src/models/document.py`
   - Implement: Document dataclass per data-model.md section 1
   - Fields: file_path, filename, file_type, page_count, is_valid, error_message
   - Validation: State transitions (UNSELECTED → SELECTED → VALIDATING → VALID/INVALID)
 
-- [ ] **T005** [P] Keyword model in `src/models/keyword.py`
+- [x] **T005** [P] Keyword model in `src/models/keyword.py`
   - Implement: Keyword dataclass per data-model.md section 2
   - Fields: text, normalized, is_historical, is_active
   - Validation: 1-100 chars, sanitize for regex
 
-- [ ] **T006** [P] ExtractionMatch model in `src/models/extraction_match.py`
+- [x] **T006** [P] ExtractionMatch model in `src/models/extraction_match.py`
   - Implement: ExtractionMatch dataclass per data-model.md section 3
   - Fields: keyword, value, page_number, line_number, status, warning
   - Status enum: 'found', 'not_found', 'ambiguous'
 
-- [ ] **T007** [P] PersonalInformation model in `src/models/personal_information.py`
+- [x] **T007** [P] PersonalInformation model in `src/models/personal_information.py`
   - Implement: PersonalInformation dataclass per data-model.md section 4
   - Fields: first_name, last_name, id_number_prefix, character_set, extraction_page, is_complete
   - Character set enum: 'cyrillic', 'latin', 'mixed', 'unknown'
 
-- [ ] **T008** [P] OutputReport model in `src/models/output_report.py`
+- [x] **T008** [P] OutputReport model in `src/models/output_report.py`
   - Implement: OutputReport dataclass per data-model.md section 5
   - Fields: document_filename, processing_timestamp, personal_info, matches, errors, warnings, output_path
   - File naming logic: `output_[original_filename].txt`
 
-- [ ] **T009** [P] ProcessingLog model in `src/models/processing_log.py`
+- [x] **T009** [P] ProcessingLog model in `src/models/processing_log.py`
   - Implement: ProcessingLog and LogEntry dataclasses per data-model.md section 6
   - Fields: log_filename, log_path, entries, start_time, end_time, status
   - LogEntry: timestamp, level, message, context
 
-- [ ] **T010** [P] Configuration model in `src/models/configuration.py`
+- [x] **T010** [P] Configuration model in `src/models/configuration.py`
   - Implement: Configuration dataclass per data-model.md section 8
   - Fields: output_folder, log_directory, number_format, proximity_rule, keyword_history, window dimensions
   - Default values: Per data-model.md section 8
 
-- [ ] **T011** [P] ApplicationState model in `src/models/application_state.py`
+- [x] **T011** [P] ApplicationState model in `src/models/application_state.py`
   - Implement: ApplicationState dataclass per data-model.md section 9
   - Fields: current_document, active_keywords, processing_status, extraction_results, error_messages, is_processing
   - State enum: IDLE, FILE_SELECTED, READY, PROCESSING, COMPLETE, ERROR, PARTIAL_SUCCESS
 
-- [ ] **T012** [P] ExtractionResults model in `src/models/extraction_results.py`
+- [x] **T012** [P] ExtractionResults model in `src/models/extraction_results.py`
   - Implement: ExtractionResults dataclass per data-model.md section 10
   - Fields: document, personal_info, matches, errors, warnings, processing_time, timestamp
   - Methods: add_match(), add_error(), add_warning(), has_errors(), has_warnings(), get_error_summary(), is_complete()
 
-- [ ] **T013** [P] KeywordHistory model in `src/models/keyword_history.py`
+- [x] **T013** [P] KeywordHistory model in `src/models/keyword_history.py`
   - Implement: KeywordHistory dataclass per data-model.md section 7
   - Fields: keywords, last_updated, max_size
   - Operations: add, select (multi-select support)
@@ -104,27 +104,27 @@
 
 ## Phase 3.3: Parser Implementation
 
-- [ ] **T014** [P] Parser contract base classes in `src/parsers/base.py`
+- [x] **T014** [P] Parser contract base classes in `src/parsers/base.py`
   - Implement: DocumentParser abstract base class per parser-contract.md
   - Implement: ParseResult, PageContent, ValidationResult dataclasses
   - Methods: parse(), validate(), get_page_count()
   - Custom exceptions: PasswordProtectedError, ScannedPDFError, ParsingError
 
-- [ ] **T015** PDFParser implementation in `src/parsers/pdf_parser.py`
+- [x] **T015** PDFParser implementation in `src/parsers/pdf_parser.py`
   - Implement: PDFParser class extending DocumentParser
   - Use: PyMuPDF (fitz) for PDF parsing per research.md section 2
   - Features: Password-protected detection, scanned PDF detection (< 10 chars in first 3 pages)
   - Error handling: FR-052 (password), FR-053 (scanned)
   - Depends on: T014
 
-- [ ] **T016** DOCXParser implementation in `src/parsers/docx_parser.py`
+- [x] **T016** DOCXParser implementation in `src/parsers/docx_parser.py`
   - Implement: DOCXParser class extending DocumentParser
   - Use: python-docx for DOCX parsing per research.md section 3
   - Features: Paragraph extraction, page break detection, page approximation (~500 words/page)
   - Error handling: Corrupted DOCX, invalid XML
   - Depends on: T014
 
-- [ ] **T017** ParserFactory in `src/parsers/factory.py`
+- [x] **T017** ParserFactory in `src/parsers/factory.py`
   - Implement: ParserFactory.create(file_path) → DocumentParser
   - Logic: Select PDFParser or DOCXParser based on file extension
   - Validation: Supported extensions (.pdf, .docx), case-insensitive
@@ -134,20 +134,20 @@
 
 ## Phase 3.4: Services Layer
 
-- [ ] **T018** [P] ConfigurationManager in `src/services/configuration_manager.py`
+- [x] **T018** [P] ConfigurationManager in `src/services/configuration_manager.py`
   - Implement: ConfigurationManager per configuration-contract.md
   - Features: Load from config.json, save to config.json, validate paths, defaults if missing/corrupted
   - File location: Application directory (root)
   - Depends on: T010
 
-- [ ] **T019** [P] OutputGenerator in `src/services/output_generator.py`
+- [x] **T019** [P] OutputGenerator in `src/services/output_generator.py`
   - Implement: OutputGenerator per output-contract.md
   - Features: Generate plain text output from ExtractionResults
   - Format: Per data-model.md section 5 (document filename, timestamp, personal info, matches with page/line numbers, errors, warnings)
   - Encoding: UTF-8
   - Depends on: T008, T012
 
-- [ ] **T020** ProcessingLogger in `src/services/processing_logger.py`
+- [x] **T020** ProcessingLogger in `src/services/processing_logger.py`
   - Implement: ProcessingLogger service
   - Features: Create log file, write timestamped entries, log levels (INFO, WARNING, ERROR)
   - File naming: `extraction_YYYYMMDD_HHMMSS.log`
@@ -157,33 +157,33 @@
 
 ## Phase 3.5: Extractor Implementation
 
-- [ ] **T021** [P] Extractor contract base in `src/extractors/base.py`
+- [x] **T021** [P] Extractor contract base in `src/extractors/base.py`
   - Implement: ExtractionEngine abstract base per extractor-contract.md
   - Implement: KeywordMatch dataclass
   - Method: extract(pages, keywords) → ExtractionResults
   - Depends on: T006, T007, T012
 
-- [ ] **T022** KeywordMatcher in `src/extractors/keyword_matcher.py`
+- [x] **T022** KeywordMatcher in `src/extractors/keyword_matcher.py`
   - Implement: KeywordMatcher.find_keywords() per extractor-contract.md
   - Features: Case-insensitive regex matching, all occurrences (FR-014), page/line numbers, Unicode support
   - Pattern: `re.compile(re.escape(keyword), re.IGNORECASE | re.UNICODE)`
   - Depends on: T021
 
-- [ ] **T023** NumberExtractor in `src/extractors/number_extractor.py`
+- [x] **T023** NumberExtractor in `src/extractors/number_extractor.py`
   - Implement: NumberExtractor.extract_numbers() per extractor-contract.md
   - Features: US/UK number format (period decimal, comma thousands), "next number after keyword" proximity
   - Pattern: `r'\b\d{1,3}(?:,\d{3})*(?:\.\d+)?\b'`
   - Error handling: "Not found" status, ambiguous format warnings
   - Depends on: T021, T022
 
-- [ ] **T024** PersonalInfoExtractor in `src/extractors/personal_info_extractor.py`
+- [x] **T024** PersonalInfoExtractor in `src/extractors/personal_info_extractor.py`
   - Implement: PersonalInfoExtractor.extract_personal_info() per extractor-contract.md
   - Features: Cyrillic/Latin labels, first page priority + full document fallback, ID first 4 digits only
   - Patterns: First name, last name, ID number (per extractor-contract.md)
   - Character set detection: Cyrillic, Latin, mixed
   - Depends on: T021
 
-- [ ] **T025** ExtractionEngine integration in `src/extractors/extraction_engine.py`
+- [x] **T025** ExtractionEngine integration in `src/extractors/extraction_engine.py`
   - Implement: ExtractionEngine.extract() orchestrating all extractors
   - Flow: KeywordMatcher → NumberExtractor → PersonalInfoExtractor → ExtractionResults
   - Error collection: Graceful degradation per Constitution Principle II
@@ -193,38 +193,38 @@
 
 ## Phase 3.6: UI Components
 
-- [ ] **T026** [P] MainWindow in `src/ui/main_window.py`
+- [x] **T026** [P] MainWindow in `src/ui/main_window.py`
   - Implement: MainWindow class per ui-contract.md
   - Layout: Single-screen 800x600, resizable with minimum
   - Sections: File selection area, keyword panel, settings panel, extract button, results display
   - Event registration: on_file_selected, on_keyword_added, on_extract_clicked
   - Depends on: T011
 
-- [ ] **T027** [P] FileSelector component in `src/ui/file_selector.py`
+- [x] **T027** [P] FileSelector component in `src/ui/file_selector.py`
   - Implement: File selection area per ui-contract.md section 1
   - Features: Browse button (file dialog), drag-and-drop (tkinterdnd2), file path display, file type icon
   - Events: on_file_selected(file_path)
   - Validation: .pdf/.docx only, file exists
 
-- [ ] **T028** [P] KeywordPanel component in `src/ui/keyword_panel.py`
+- [x] **T028** [P] KeywordPanel component in `src/ui/keyword_panel.py`
   - Implement: Keyword management panel per ui-contract.md section 2
   - Features: Text input + Add button, keyword history dropdown, active keywords chips (removable), Clear All button
   - Events: on_keyword_added, on_keyword_selected_from_history, on_keyword_removed, on_keywords_cleared
   - Validation: 1-100 chars, no duplicates (case-insensitive)
 
-- [ ] **T029** [P] SettingsPanel component in `src/ui/settings_panel.py`
+- [x] **T029** [P] SettingsPanel component in `src/ui/settings_panel.py`
   - Implement: Collapsible settings panel per ui-contract.md section 3
   - Features: Output folder browser, log directory browser, number format dropdown, proximity rule dropdown
   - Events: on_output_folder_changed, on_log_directory_changed, on_settings_changed
   - State: Collapsed (default) / Expanded
 
-- [ ] **T030** [P] ProgressBar component in `src/ui/progress_bar.py`
+- [x] **T030** [P] ProgressBar component in `src/ui/progress_bar.py`
   - Implement: Progress bar and status message per ui-contract.md section 4
   - Features: Indeterminate progress bar, status label, Extract button enable/disable
   - States: Ready, Processing, Complete, Error
   - Depends on: T011
 
-- [ ] **T031** [P] ResultsDisplay component in `src/ui/results_display.py`
+- [x] **T031** [P] ResultsDisplay component in `src/ui/results_display.py`
   - Implement: Results display area per ui-contract.md section 5
   - Features: Success/error/warning messages, "Open Output File/Folder/Log" buttons, expandable error details
   - Events: on_open_output_file, on_open_output_folder, on_open_log_file
@@ -234,19 +234,19 @@
 
 ## Phase 3.7: Controllers & State Management
 
-- [ ] **T032** StateManager in `src/controllers/state_manager.py`
+- [x] **T032** StateManager in `src/controllers/state_manager.py`
   - Implement: StateManager for ApplicationState management
   - Features: State transitions (per data-model.md section 9), thread-safe state updates, immutable state pattern
   - State machine: IDLE → FILE_SELECTED → READY → PROCESSING → COMPLETE/ERROR/PARTIAL_SUCCESS
   - Depends on: T011
 
-- [ ] **T033** ThreadCoordinator in `src/controllers/thread_coordinator.py`
+- [x] **T033** ThreadCoordinator in `src/controllers/thread_coordinator.py`
   - Implement: ThreadCoordinator for worker thread management per ui-contract.md threading section
   - Features: Worker thread creation, queue-based communication, main thread queue polling (100ms)
   - Pattern: Worker sends {'type': 'progress'/'complete'/'error', 'message'/'results': ...}
   - Depends on: T012
 
-- [ ] **T034** AppController in `src/controllers/app_controller.py`
+- [x] **T034** AppController in `src/controllers/app_controller.py`
   - Implement: AppController coordinating UI and business logic per ui-contract.md
   - Callbacks: on_file_selected, on_keyword_added, on_extract_clicked, on_settings_changed
   - Flow: Validate → Update state → Update UI → Start extraction
@@ -256,7 +256,7 @@
 
 ## Phase 3.8: Integration & Main Entry
 
-- [ ] **T035** Main application entry in `src/main.py`
+- [x] **T035** Main application entry in `src/main.py`
   - Implement: Application initialization and wiring
   - Flow: Load config → Create MainWindow → Initialize AppController → Register callbacks → Start event loop
   - Error handling: Corrupted config fallback to defaults
@@ -266,12 +266,12 @@
 
 ## Phase 3.9: Build Configuration
 
-- [ ] **T036** Update requirements.txt for production
+- [x] **T036** Update requirements.txt for production
   - Add: PyInstaller>=5.13 for packaging
   - Verify: All dependencies listed with minimum versions
   - Test: Fresh virtual environment install
 
-- [ ] **T037** Create PyInstaller build.spec
+- [x] **T037** Create PyInstaller build.spec
   - Implement: build.spec per research.md section 10
   - Configuration: --onefile flag, hiddenimports (tkinterdnd2, fitz, docx), console=False, UPX compression
   - Name: DocumentExtractor.exe

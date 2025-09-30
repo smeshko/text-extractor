@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "output_folder": "/Users/A1E6E98/Documents/DocumentExtractor/Output",
+  "log_directory": "/Users/A1E6E98/Documents/DocumentExtractor/Logs",
+  "number_format": "us_uk",
+  "proximity_rule": "next_number",
+  "keyword_history": [
+    "hdi",
+    "api"
+  ],
+  "window_width": 800,
+  "window_height": 600,
+  "last_updated": "2025-10-01T01:04:58.448855"
+}
