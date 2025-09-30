@@ -33,6 +33,17 @@
 
 ---
 
+## Clarifications
+
+### Session 2025-09-30
+- Q: Number Format Specification - Which number format convention should the system support? → A: US/UK format (period as decimal separator)
+- Q: Keyword-Number Proximity Rules - How should the system determine which number is associated with a keyword? → A: Next numeric value (first number after keyword, regardless of distance)
+- Q: Personal Information Field Labeling - How are personal information fields typically presented in documents? → A: Labeled fields with consistent labels
+- Q: Password-Protected and OCR Document Scope - Should the system support password-protected PDFs and scanned PDFs requiring OCR? → A: Neither (out of scope; reject with error messages)
+- Q: Observability & Error Reporting - What level of operational visibility should the system provide? → A: Standard (write processing log file with timestamps, warnings, and errors)
+
+---
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### Primary User Story
@@ -53,13 +64,13 @@ A document processor needs to quickly extract specific numerical values (associa
 6. **Given** a user has selected 8 keywords and a large document, **When** extraction is running, **Then** a progress bar shows current processing status until completion
 
 ### Edge Cases
-- What happens when a keyword appears in a document but no number is nearby? [NEEDS CLARIFICATION: see FR-009 for proximity rules]
-- What happens when a number format is ambiguous (e.g., "3,500" could be 3.5 or three thousand five hundred)? System should flag with warning indicator and make best guess
+- What happens when a keyword appears in a document but no number follows it anywhere in the document? System marks that keyword occurrence as "Not found"
+- What happens when a number format is ambiguous (e.g., "3,500")? System interprets using US/UK convention (3,500 = three thousand five hundred)
 - What happens when personal information fields are partially present (only first name, missing ID)? System marks missing fields as "Not found" and continues
 - What happens when a document has mixed Cyrillic and Latin text for the same person's name? System should extract both representations
 - What happens when the same keyword appears multiple times on the same page? System extracts all occurrences with the same page number
-- What happens when user selects a password-protected PDF? [NEEDS CLARIFICATION: see Open Questions - currently out of scope but may be needed]
-- What happens when user selects a scanned PDF requiring OCR? [NEEDS CLARIFICATION: currently out of scope but may be needed]
+- What happens when user selects a password-protected PDF? System detects protection and displays error message: "Password-protected PDFs are not supported"
+- What happens when user selects a scanned PDF requiring OCR? System detects absence of extractable text and displays error message: "Scanned PDFs requiring OCR are not supported"
 - What happens when keywords are entered with different casing (e.g., "HTD" vs "htd")? System performs case-insensitive matching
 
 ---
@@ -87,19 +98,19 @@ A document processor needs to quickly extract specific numerical values (associa
 
 #### Data Extraction - Keywords and Numbers
 - **FR-014**: System MUST extract ALL occurrences of each specified keyword within a document, not just the first occurrence
-- **FR-015**: System MUST extract numerical values associated with each found keyword [NEEDS CLARIFICATION: "associated" proximity rules - same line? within X characters? see PRD Q6]
-- **FR-016**: System MUST support number formats [NEEDS CLARIFICATION: decimal separator (comma vs period), thousands separators, integer vs decimal - see PRD Q4]
+- **FR-015**: System MUST extract the first numerical value that appears after each found keyword in the document text flow, regardless of distance
+- **FR-016**: System MUST support US/UK number format convention with period as decimal separator (e.g., "3.5", "1,234.56") and comma as thousands separator; integers and decimals both supported
 - **FR-017**: For each keyword-number match, system MUST record the page number where found
 - **FR-018**: For each keyword-number match, system SHOULD record the line number where found (if technically feasible)
 - **FR-019**: When a keyword is found but no associated number can be extracted, system MUST mark that keyword as "Not found" in the output
 
 #### Data Extraction - Personal Information
-- **FR-020**: System MUST extract first names containing Cyrillic characters
-- **FR-021**: System MUST extract first names containing Latin characters
-- **FR-022**: System MUST extract last names containing Cyrillic characters
-- **FR-023**: System MUST extract last names containing Latin characters
+- **FR-020**: System MUST extract first names from labeled fields (e.g., "First Name:", "Име:", "Name:") containing Cyrillic characters
+- **FR-021**: System MUST extract first names from labeled fields containing Latin characters
+- **FR-022**: System MUST extract last names from labeled fields (e.g., "Last Name:", "Фамилия:", "Surname:") containing Cyrillic characters
+- **FR-023**: System MUST extract last names from labeled fields containing Latin characters
 - **FR-024**: System MUST handle mixed Cyrillic and Latin text in the same name field
-- **FR-025**: System MUST extract the first 4 digits of identification numbers [NEEDS CLARIFICATION: exact format, location patterns, and labeling in documents - see PRD Q7, Q8]
+- **FR-025**: System MUST extract the first 4 digits of identification numbers from labeled fields (e.g., "ID:", "ЕГН:", "ID Number:") using pattern matching on common label variations in Cyrillic and Latin
 - **FR-026**: When personal information fields are missing, system MUST mark them as "Not found" and continue processing
 
 #### Output Generation
@@ -112,6 +123,8 @@ A document processor needs to quickly extract specific numerical values (associa
 - **FR-033**: For each keyword match, output MUST show keyword name, extracted value, and page number
 - **FR-034**: For each keyword match, output SHOULD show line number if available
 - **FR-035**: Users MUST be able to save the output file to a location of their choice
+- **FR-054**: System MUST generate a processing log file for each extraction operation containing timestamps, warnings, errors, and processing events
+- **FR-055**: Log file MUST be saved automatically in a configurable log directory alongside the output file
 
 #### User Interface
 - **FR-036**: System MUST provide a single-screen graphical user interface
@@ -130,6 +143,8 @@ A document processor needs to quickly extract specific numerical values (associa
 - **FR-047**: When personal information is missing, system MUST mark as "Not found" and continue processing
 - **FR-048**: System MUST collect all errors encountered during processing and report them together at the end, not stopping on first error
 - **FR-049**: System MUST complete processing and generate output even when some extractions fail
+- **FR-052**: System MUST reject password-protected PDF files with clear error message: "Password-protected PDFs are not supported"
+- **FR-053**: System MUST detect scanned PDFs lacking extractable text and reject with error message: "Scanned PDFs requiring OCR are not supported"
 
 #### Performance
 - **FR-050**: System SHOULD complete document processing in under 10 seconds per document for typical documents
@@ -139,7 +154,7 @@ A document processor needs to quickly extract specific numerical values (associa
 
 ### Key Entities
 
-- **Document**: A PDF or DOCX file submitted for processing. Contains text content with embedded keywords, numerical values, and personal information. Has pages, and potentially line structures.
+- **Document**: A PDF or DOCX file submitted for processing. Must be text-based (not password-protected, not requiring OCR). Contains text content with embedded keywords, numerical values, and personal information. Has pages, and potentially line structures.
 
 - **Keyword**: A user-defined search term (e.g., "HTD", "RTP", "BGN") used to locate numerical values in documents. Case-insensitive, can appear multiple times in a document, and is stored in history for reuse.
 
@@ -148,6 +163,8 @@ A document processor needs to quickly extract specific numerical values (associa
 - **Personal Information**: Structured identity data extracted from documents, consisting of first name, last name, and ID number prefix (first 4 digits). May contain Cyrillic, Latin, or mixed character sets.
 
 - **Output Report**: A plain text file containing all extraction results for a single document, including document metadata, personal information, and all keyword-number matches with locations.
+
+- **Processing Log**: A timestamped log file generated for each extraction operation, recording processing events, warnings, errors, and diagnostic information for troubleshooting purposes.
 
 - **Keyword History**: Persistent collection of previously used keywords across sessions, allowing users to quickly reselect common search terms without re-entering them.
 
@@ -162,13 +179,8 @@ A document processor needs to quickly extract specific numerical values (associa
 - [x] All mandatory sections completed
 
 ### Requirement Completeness
-- [ ] No [NEEDS CLARIFICATION] markers remain - **WARN: 5 critical clarifications needed**
-  - Number format specification (FR-016)
-  - Keyword-number proximity rules (FR-015)
-  - Personal information extraction patterns (FR-025)
-  - Edge case support scope (password-protected PDFs, OCR)
-  - Example documents needed for validation
-- [x] Requirements are testable and unambiguous (except marked items)
+- [x] No [NEEDS CLARIFICATION] markers remain - All critical clarifications resolved
+- [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Scope is clearly bounded
 - [x] Dependencies and assumptions identified
@@ -189,23 +201,19 @@ A document processor needs to quickly extract specific numerical values (associa
 
 ## Critical Open Questions from PRD
 
-The following questions from the PRD must be resolved before implementation planning:
+~~All critical questions from the PRD have been resolved through the clarification process.~~
 
-1. **Q4 - Number Format Support**: What number formats should be supported? (e.g., "3,5" vs "3.5" vs "3,500.50")
-   - **Impact**: Affects FR-016 and core parsing logic
+### Resolved Questions:
+1. ~~**Q4 - Number Format Support**~~ **RESOLVED**: US/UK format (period as decimal separator)
+2. ~~**Q6 - Keyword-Number Proximity**~~ **RESOLVED**: First number after keyword in document text flow
+3. ~~**Q7 - Personal Information Format**~~ **RESOLVED**: Labeled fields with consistent labels
+4. ~~**Edge Case Support (password-protected, OCR)**~~ **RESOLVED**: Out of scope; reject with error messages
+5. ~~**Observability**~~ **RESOLVED**: Standard logging with timestamps, warnings, and errors
 
-2. **Q6 - Keyword-Number Proximity**: How should the tool find numbers associated with keywords? Same line only, within X characters, or other rules?
-   - **Impact**: Affects FR-015 and extraction algorithm design
-
-3. **Q7 - Personal Information Format**: What are the exact patterns for name and ID extraction? Are fields labeled? What are the formatting conventions?
-   - **Impact**: Affects FR-025 and personal info extraction reliability
-
-4. **Q8 - Personal Information Location**: Where in documents does personal info typically appear? Always first page? Specific area?
-   - **Impact**: Affects FR-025 and extraction performance
-
-5. **Q17 - Example Documents**: Real or anonymized examples needed to validate extraction patterns and understand edge cases
-   - **Impact**: Critical for accurate implementation and testing
+### Deferred to Planning Phase:
+- **Q17 - Example Documents**: Real or anonymized examples will be used during implementation validation and testing
+  - **Status**: Not blocking for planning; required for implementation validation
 
 ---
 
-**NEXT STEP**: The specification is ready for review. Once the 5 critical clarifications above are resolved, this spec can proceed to the `/plan` phase for implementation planning.
+**NEXT STEP**: All critical ambiguities resolved. The specification is ready to proceed to the `/plan` phase for implementation planning.
