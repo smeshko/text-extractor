@@ -47,7 +47,37 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### User-First Simplicity
+- [ ] Single-screen GUI workflow maintained
+- [ ] No technical knowledge required for operation
+- [ ] Complex operations hidden behind simple controls
+
+### Graceful Degradation
+- [ ] Error handling continues processing on failures
+- [ ] All errors collected and reported at end
+- [ ] Partial results prioritized over complete failure
+
+### Unicode-First
+- [ ] Full Cyrillic and Latin character support verified
+- [ ] Mixed script handling implemented
+- [ ] Character encoding preserved throughout pipeline
+
+### Keyword History Persistence
+- [ ] Keyword storage mechanism defined
+- [ ] History persists across sessions
+- [ ] Multi-select from history supported
+
+### Human-Readable Output
+- [ ] Plain text format with clear labels
+- [ ] Metadata included (filename, timestamp)
+- [ ] Page/line numbers for each extraction
+
+### Distribution Requirements
+- [ ] PyInstaller --onefile configuration
+- [ ] Windows 10/11 compatibility verified
+- [ ] No external Python/dependencies required
+
+*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
 
 ## Project Structure
 
@@ -142,16 +172,11 @@ directories captured above]
    - Use standard REST/GraphQL patterns
    - Output OpenAPI/GraphQL schema to `/contracts/`
 
-3. **Generate contract tests** from contracts:
-   - One test file per endpoint
-   - Assert request/response schemas
-   - Tests must fail (no implementation yet)
+3. **Extract validation scenarios** from user stories:
+   - Each story → manual validation checklist
+   - Quickstart = story validation steps
 
-4. **Extract test scenarios** from user stories:
-   - Each story → integration test scenario
-   - Quickstart test = story validation steps
-
-5. **Update agent file incrementally** (O(1) operation):
+4. **Update agent file incrementally** (O(1) operation):
    - Run `.specify/scripts/bash/update-agent-context.sh claude`
      **IMPORTANT**: Execute it exactly as specified above. Do not add or remove any arguments.
    - If exists: Add only NEW tech from current plan
@@ -160,7 +185,7 @@ directories captured above]
    - Keep under 150 lines for token efficiency
    - Output to repository root
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/*, quickstart.md (with validation checklist), agent-specific file
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
@@ -168,17 +193,17 @@ directories captured above]
 **Task Generation Strategy**:
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Each contract → implementation task
+- Each entity → model creation task [P]
+- Each user story → implementation task
+- Manual validation tasks from quickstart
 
 **Ordering Strategy**:
-- TDD order: Tests before implementation 
 - Dependency order: Models before services before UI
 - Mark [P] for parallel execution (independent files)
+- Validation tasks at end
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**Estimated Output**: 20-25 numbered, ordered tasks in tasks.md
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -216,4 +241,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*

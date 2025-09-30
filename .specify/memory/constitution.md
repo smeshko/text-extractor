@@ -1,50 +1,95 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version Change: [NEW] → 1.0.0
+Modified Principles: N/A (initial version)
+Added Sections:
+  - Core Principles (5 principles)
+  - Distribution Requirements
+  - Governance
+Removed Sections: N/A
+Templates Requiring Updates:
+  ✅ .specify/templates/plan-template.md - Updated Constitution Check section reference
+  ✅ .specify/templates/spec-template.md - Aligned with user-focused requirements
+  ✅ .specify/templates/tasks-template.md - Removed test-first requirements per constitution
+Follow-up TODOs:
+  - Ratification date set to 2025-09-30 (today) as initial adoption
+-->
+
+# Document Data Extraction Tool Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. User-First Simplicity
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+The application MUST maintain a single-screen GUI workflow accessible to non-technical users. All interactions MUST be intuitive without requiring technical knowledge or documentation. Complex operations MUST be hidden behind simple controls (Browse, Extract, Settings).
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: Target users are document creators with minimal technical expertise; complexity creates adoption barriers.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Graceful Degradation
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+The system MUST continue processing when encountering errors. Keyword not found, ambiguous number formats, or missing personal information MUST NOT halt execution. All errors MUST be collected and reported together at the end of processing. Partial results are preferable to complete failure.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Documents are often imperfect; users need maximum data extraction even from flawed inputs.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Unicode-First
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+All text processing MUST fully support Unicode character sets, with primary support for Cyrillic and secondary support for Latin scripts. The system MUST handle mixed Cyrillic/Latin text within the same document. File names, keywords, personal information, and output MUST preserve original character encoding.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Rationale**: Target documents are primarily in Cyrillic; character corruption renders results unusable.
+
+### IV. Keyword History Persistence
+
+Keywords used in previous sessions MUST be persisted and made available for reuse. Users MUST be able to select multiple historical keywords alongside new manual entries. The keyword history MUST survive application restarts and system reboots.
+
+**Rationale**: Users work with recurring document types; re-entering 5-10 keywords per session creates friction.
+
+### V. Human-Readable Output
+
+Output files MUST use plain text format optimized for human parsing, not machine processing. Each extraction MUST include keyword name, value, page number, and line number (if available) in a flat structure. Document metadata (filename, timestamp) and personal information MUST be clearly labeled.
+
+**Example**:
+```
+Document: report_2024.pdf
+Processed: 2024-09-29 10:30
+Name: Иван Петров (Ivan Petrov)
+ID: 1234***
+HTD: 3,5 (Page 2, Line 15)
+HTD: 4,2 (Page 5, Line 8)
+```
+
+**Rationale**: Users manually review and process extraction results; structured formats (JSON, CSV) require additional tools.
+
+## Distribution Requirements
+
+### Single Executable Deployment
+
+The application MUST be packaged as a single Windows executable (.exe) file using PyInstaller with the `--onefile` flag. The executable MUST run on Windows 10/11 without requiring Python installation or additional dependencies. Development on macOS MUST NOT compromise Windows compatibility.
+
+**Rationale**: Target users cannot install Python or manage dependencies; distribution complexity prevents deployment.
+
+### Testing Policy
+
+The project explicitly EXCLUDES automated testing. No unit tests, integration tests, or test-first development practices are required. Validation relies on manual testing against representative documents.
+
+**Rationale**: Project scope (2 users, solo development) does not justify testing infrastructure overhead; manual validation is sufficient.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Process
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Constitution changes require:
+1. Documented justification referencing PRD requirements or user feedback
+2. Review of impact on existing implementation
+3. Update of version number following semantic versioning (MAJOR.MINOR.PATCH)
+4. Synchronization of dependent templates (plan, spec, tasks)
+
+### Compliance Review
+
+Features and implementation decisions MUST align with constitutional principles. Violations require explicit justification in the Complexity Tracking section of plan.md. Unjustified complexity MUST be simplified before proceeding.
+
+### Version Control
+
+This constitution supersedes all other development practices and preferences. When conflicts arise between this document and external guidance, constitution principles take precedence.
+
+**Version**: 1.0.0 | **Ratified**: 2025-09-30 | **Last Amended**: 2025-09-30
