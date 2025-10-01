@@ -77,14 +77,46 @@ class KeywordPanel(ttk.Frame):
             )
             history_label.grid(row=2, column=0, sticky=tk.W, pady=(AppTheme.PADDING['medium'], AppTheme.PADDING['small']))
 
-            # Create grid layout
-            self._create_grid_layout(self)
-            
-            # Populate grid
+            # History listbox with scrollbar
+            history_frame = ttk.Frame(self)
+            history_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
+            history_frame.columnconfigure(0, weight=1)
+
+            # Scrollbar
+            scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL)
+
+            # Listbox
+            self.history_listbox = tk.Listbox(
+                history_frame,
+                height=4,
+                selectmode=tk.MULTIPLE,
+                yscrollcommand=scrollbar.set,
+                exportselection=False,
+                borderwidth=1,
+                relief='solid',
+                bg=AppTheme.COLORS['bg'],
+                fg=AppTheme.COLORS['text']
+            )
+            scrollbar.config(command=self.history_listbox.yview)
+
+            self.history_listbox.grid(row=0, column=0, sticky=(tk.W, tk.E))
+            scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+
+            # Populate history
             self._populate_history()
-            
-            # Schedule a delayed recalculation to ensure canvas is rendered
-            self.after(100, self._calculate_grid_positions)
+
+            # Bind double-click to select
+            self.history_listbox.bind('<Double-Button-1>', lambda e: self._select_from_history())
+
+            # Select from history button
+            select_button = ttk.Button(
+                self,
+                text="Add Selected from History",
+                command=self._select_from_history
+            )
+            select_button.grid(row=4, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['medium']))
+        else:
+            self.history_listbox = None
 
         # Active keywords section
         active_label = ttk.Label(
@@ -139,206 +171,18 @@ class KeywordPanel(ttk.Frame):
         self.clear_button.grid(row=0, column=1, sticky=tk.E)
         self.clear_button.state(['disabled'])
 
-    def _create_grid_layout(self, parent):
-        """Initialize grid layout structure (Canvas + Frame + Scrollbar)."""
-        # Container frame for canvas + scrollbar
-        history_frame = ttk.Frame(parent)
-        history_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), 
-                           pady=(0, AppTheme.PADDING['medium']))
-        history_frame.columnconfigure(0, weight=1)
-        
-        # Canvas for scrolling
-        self.grid_container = tk.Canvas(
-            history_frame,
-            bg=AppTheme.COLORS['bg'],
-            highlightthickness=0
-        )
-        
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL,
-                                 command=self.grid_container.yview)
-        self.grid_container.configure(yscrollcommand=scrollbar.set)
-        
-        # Grid frame (attached to canvas)
-        self.grid_frame = tk.Frame(self.grid_container, bg=AppTheme.COLORS['bg'])
-        self.grid_window = self.grid_container.create_window((0, 0), window=self.grid_frame, anchor='nw')
-        
-        # Layout
-        self.grid_container.grid(row=0, column=0, sticky=(tk.W, tk.E))
-        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        
-        # Bind resize event
-        self.grid_container.bind('<Configure>', self._on_resize_grid)
-        
-        # Initialize state
-        self.grid_items = []
-        self._resize_job = None
-
-    def _calculate_grid_positions(self):
-        """Calculate and apply flow/wrap positions for all grid items."""
-        print(f"[DEBUG] _calculate_grid_positions called, items: {len(self.grid_items) if hasattr(self, 'grid_items') else 0}")
-        if not self.grid_items or not self.grid_container.winfo_exists():
-            print(f"[DEBUG] Returning early - no items or container doesn't exist")
-            return
-        
-        # Constants
-        ITEM_SPACING = 8
-        ROW_SPACING = 8
-        MAX_GRID_HEIGHT = 200
-        MIN_CONTAINER_WIDTH = 200  # Minimum width to avoid layout issues
-        
-        # Get container width (use winfo_width, fallback to reqwidth)
-        container_width = self.grid_container.winfo_width()
-        if container_width <= 1:
-            container_width = self.grid_container.winfo_reqwidth()
-        
-        # Fallback to parent width if still too small
-        if container_width < MIN_CONTAINER_WIDTH:
-            try:
-                container_width = self.winfo_width() - 40  # Account for padding
-                if container_width < MIN_CONTAINER_WIDTH:
-                    container_width = 600  # Safe default
-            except:
-                container_width = 600
-        
-        # Position calculation
-        current_x = 0
-        current_y = 0
-        row_height = 0
-        
-        for i, label in enumerate(self.grid_items):
-            # Update geometry
-            label.update_idletasks()
-            item_width = label.winfo_reqwidth()
-            item_height = label.winfo_reqheight()
-            
-            if i == 0:  # Debug first item
-                print(f"[DEBUG] First item: width={item_width}, height={item_height}, text='{label.cget('text')}'")
-            
-            # Wrap to next row if needed
-            if current_x + item_width > container_width and current_x > 0:
-                current_x = 0
-                current_y += row_height + ROW_SPACING
-                row_height = 0
-            
-            # Place label
-            label.place(x=current_x, y=current_y)
-            
-            if i == 0:  # Debug first item placement
-                print(f"[DEBUG] First item placed at: x={current_x}, y={current_y}")
-            
-            # Update tracking
-            current_x += item_width + ITEM_SPACING
-            row_height = max(row_height, item_height)
-        
-        # Set canvas height (ensure minimum height if items exist)
-        actual_height = current_y + row_height
-        if actual_height < 30 and self.grid_items:  # Minimum height for one row
-            actual_height = 30
-        canvas_height = min(actual_height, MAX_GRID_HEIGHT)
-        
-        print(f"[DEBUG] Container width: {container_width}, actual_height: {actual_height}, canvas_height: {canvas_height}")
-        
-        self.grid_container.configure(height=canvas_height)
-        
-        # Update grid frame size to match content
-        self.grid_frame.configure(width=container_width, height=actual_height)
-        
-        # Update scroll region
-        self.grid_container.configure(scrollregion=(0, 0, container_width, actual_height))
-        
-        # Force update
-        self.grid_frame.update_idletasks()
-        self.grid_container.update_idletasks()
-
     def _populate_history(self):
-        """Populate grid with keyword items from history."""
-        print(f"[DEBUG] _populate_history called")
-        print(f"[DEBUG] Has grid_frame: {hasattr(self, 'grid_frame')}")
-        if hasattr(self, 'grid_frame'):
-            print(f"[DEBUG] grid_frame exists: {self.grid_frame.winfo_exists()}")
-        
-        if not hasattr(self, 'grid_frame') or not self.grid_frame.winfo_exists():
-            print(f"[DEBUG] Returning early - no grid_frame")
+        """Populate history listbox from keyword_history."""
+        if not self.history_listbox:
             return
-        
-        # Clear existing items
-        for item in self.grid_items:
-            item.destroy()
-        self.grid_items.clear()
-        
-        # Get keywords, filter out active ones
-        history_keywords = self._keyword_history
-        active_keyword_texts = self._active_keywords
-        available_keywords = [kw for kw in history_keywords if kw not in active_keyword_texts]
-        
-        print(f"[DEBUG] History keywords: {history_keywords}")
-        print(f"[DEBUG] Active keywords: {active_keyword_texts}")
-        print(f"[DEBUG] Available keywords: {available_keywords}")
-        
-        # Create grid items
-        for keyword in available_keywords:
-            label = tk.Label(
-                self.grid_frame,
-                text=keyword,
-                bg=AppTheme.COLORS['primary_light'],
-                fg=AppTheme.COLORS['text'],
-                font=AppTheme.FONTS['body'],
-                padx=AppTheme.PADDING['medium'],
-                pady=AppTheme.PADDING['small'],
-                cursor='hand2',
-                relief='solid',
-                borderwidth=1
-            )
-            
-            # Hover bindings
-            label.bind('<Enter>', lambda e, lbl=label: 
-                       lbl.configure(bg=AppTheme.COLORS['bg_hover']))
-            label.bind('<Leave>', lambda e, lbl=label: 
-                       lbl.configure(bg=AppTheme.COLORS['primary_light']))
-            
-            # Click binding
-            label.bind('<Button-1>', lambda e, kw=keyword: self._on_grid_item_click(kw))
-            
-            self.grid_items.append(label)
-        
-        print(f"[DEBUG] Created {len(self.grid_items)} grid items")
-        
-        # Layout items
-        self._calculate_grid_positions()
 
-    def _on_grid_item_click(self, keyword_text):
-        """Handle single click on grid item (immediate add workflow)."""
-        # Add to active keywords
-        self._add_active_keyword(keyword_text)
-        
-        # Remove from grid display
-        self._remove_from_history_display(keyword_text)
-        
-        # Optional: Notify controller
-        if self._keyword_selected_from_history_callback:
-            self._keyword_selected_from_history_callback(keyword_text)
+        self.history_listbox.delete(0, tk.END)
 
-    def _remove_from_history_display(self, keyword_text):
-        """Remove specific keyword from grid display."""
-        # Find and destroy matching label
-        for label in self.grid_items[:]:  # Copy list to avoid modification during iteration
-            if label.cget('text') == keyword_text:
-                label.destroy()
-                self.grid_items.remove(label)
-                break
-        
-        # Reflow remaining items
-        self._calculate_grid_positions()
-
-    def _on_resize_grid(self, event):
-        """Handle Canvas resize event with debounce."""
-        # Cancel previous resize job
-        if self._resize_job:
-            self.after_cancel(self._resize_job)
-        
-        # Schedule new layout calculation (100ms delay)
-        self._resize_job = self.after(100, self._calculate_grid_positions)
+        # Add keywords in reverse order (most recent first)
+        for keyword in reversed(self._keyword_history):
+            # Don't show if already active
+            if keyword not in self._active_keywords:
+                self.history_listbox.insert(tk.END, keyword)
 
     def _add_keyword(self):
         """Add keyword from input field."""
@@ -367,6 +211,29 @@ class KeywordPanel(ttk.Frame):
         if self._keyword_added_callback:
             self._keyword_added_callback(keyword)
 
+    def _select_from_history(self):
+        """Add selected keywords from history."""
+        if not self.history_listbox:
+            return
+
+        selected_indices = self.history_listbox.curselection()
+
+        if not selected_indices:
+            return
+
+        # Get selected keywords
+        for index in selected_indices:
+            keyword = self.history_listbox.get(index)
+
+            # Add to active
+            self._add_active_keyword(keyword)
+
+            # Notify callback
+            if self._keyword_selected_from_history_callback:
+                self._keyword_selected_from_history_callback(keyword)
+
+        # Refresh history to remove added keywords
+        self._populate_history()
 
     def _add_active_keyword(self, keyword: str):
         """Add keyword to active display.
@@ -396,7 +263,7 @@ class KeywordPanel(ttk.Frame):
                 self._keyword_removed_callback(keyword)
 
             # Refresh history
-            if hasattr(self, 'grid_frame') and self.grid_frame:
+            if self.history_listbox:
                 self._populate_history()
 
     def _clear_keywords(self):
@@ -412,7 +279,7 @@ class KeywordPanel(ttk.Frame):
             self._keywords_cleared_callback()
 
         # Refresh history
-        if hasattr(self, 'grid_frame') and self.grid_frame:
+        if self.history_listbox:
             self._populate_history()
 
     def _render_active_keywords(self):
@@ -495,21 +362,6 @@ class KeywordPanel(ttk.Frame):
         # Update scroll region
         self.active_canvas.configure(scrollregion=self.active_canvas.bbox('all'))
 
-    def destroy(self):
-        """Clean up grid resources."""
-        # Cancel pending resize job
-        if hasattr(self, '_resize_job') and self._resize_job:
-            self.after_cancel(self._resize_job)
-        
-        # Destroy grid items
-        if hasattr(self, 'grid_items'):
-            for item in self.grid_items:
-                item.destroy()
-            self.grid_items.clear()
-        
-        # Call parent destroy
-        super().destroy()
-
     def _show_error(self, message: str):
         """Show validation error (temporary)."""
         # Flash the entry field background
@@ -528,7 +380,7 @@ class KeywordPanel(ttk.Frame):
         self._render_active_keywords()
 
         # Refresh history
-        if hasattr(self, 'grid_frame') and self.grid_frame:
+        if self.history_listbox:
             self._populate_history()
 
     def get_active_keywords(self) -> list[str]:
@@ -546,7 +398,7 @@ class KeywordPanel(ttk.Frame):
             keywords: New history list
         """
         self._keyword_history = keywords
-        if hasattr(self, 'grid_frame') and self.grid_frame:
+        if self.history_listbox:
             self._populate_history()
 
     # Event callbacks
