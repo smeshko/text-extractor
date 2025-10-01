@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from ui.theme import AppTheme
 
 
 class ProgressBar(ttk.Frame):
@@ -20,7 +21,12 @@ class ProgressBar(ttk.Frame):
         Args:
             parent: Parent tkinter widget
         """
-        super().__init__(parent, padding="10", relief=tk.RIDGE, borderwidth=1)
+        super().__init__(
+            parent,
+            padding=AppTheme.PADDING['large'],
+            relief='solid',
+            borderwidth=1
+        )
 
         self._extract_clicked_callback = None
         self._state = 'ready'
@@ -34,7 +40,7 @@ class ProgressBar(ttk.Frame):
 
         # Extract button (centered, large)
         button_frame = ttk.Frame(self)
-        button_frame.grid(row=0, column=0, pady=(0, 10))
+        button_frame.grid(row=0, column=0, pady=(0, AppTheme.PADDING['large']))
 
         self.extract_button = ttk.Button(
             button_frame,
@@ -52,14 +58,14 @@ class ProgressBar(ttk.Frame):
             mode='indeterminate',
             length=400
         )
-        self.progress_bar.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+        self.progress_bar.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         self.progress_bar.grid_remove()  # Hidden by default
 
         # Status message
         self.status_label = ttk.Label(
             self,
             text="Select a file and add keywords to begin",
-            foreground='gray'
+            foreground=AppTheme.COLORS['text_muted']
         )
         self.status_label.grid(row=2, column=0)
 
@@ -77,7 +83,7 @@ class ProgressBar(ttk.Frame):
         self.progress_bar.stop()
         self.status_label.configure(
             text="Ready to extract",
-            foreground='green'
+            foreground=AppTheme.COLORS['success']
         )
 
     def set_processing(self, message: str = "Processing..."):
@@ -93,7 +99,7 @@ class ProgressBar(ttk.Frame):
         self.progress_bar.start(10)  # Animation speed
         self.status_label.configure(
             text=message,
-            foreground='blue'
+            foreground=AppTheme.COLORS['primary']
         )
 
     def set_complete(self, message: str = "Extraction complete!"):
@@ -109,7 +115,7 @@ class ProgressBar(ttk.Frame):
         self.progress_bar.grid_remove()
         self.status_label.configure(
             text=message,
-            foreground='green'
+            foreground=AppTheme.COLORS['success']
         )
 
     def set_error(self, message: str = "Extraction failed"):
@@ -125,7 +131,7 @@ class ProgressBar(ttk.Frame):
         self.progress_bar.grid_remove()
         self.status_label.configure(
             text=message,
-            foreground='red'
+            foreground=AppTheme.COLORS['error']
         )
 
     def update_status(self, message: str):
@@ -192,17 +198,17 @@ class ProgressBar(ttk.Frame):
                 if state.processing_status not in (ProcessingStatus.PROCESSING, ProcessingStatus.ERROR):
                     self.status_label.configure(
                         text="Ready to extract",
-                        foreground='green'
+                        foreground=AppTheme.COLORS['success']
                     )
         else:
             self.disable_extract()
             if not state.current_document:
                 self.status_label.configure(
                     text="Select a file and add keywords to begin",
-                    foreground='gray'
+                    foreground=AppTheme.COLORS['text_muted']
                 )
             elif len(state.active_keywords) == 0:
                 self.status_label.configure(
                     text="Add keywords to begin",
-                    foreground='gray'
+                    foreground=AppTheme.COLORS['text_muted']
                 )

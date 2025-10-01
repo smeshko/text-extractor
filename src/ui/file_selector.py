@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
 import os
+from ui.theme import AppTheme
 
 
 class FileSelector(ttk.Frame):
@@ -21,7 +22,12 @@ class FileSelector(ttk.Frame):
         Args:
             parent: Parent tkinter widget
         """
-        super().__init__(parent, padding="10", relief=tk.RIDGE, borderwidth=1)
+        super().__init__(
+            parent,
+            padding=AppTheme.PADDING['large'],
+            relief='solid',
+            borderwidth=1
+        )
 
         self._file_selected_callback = None
         self._current_file = None
@@ -35,24 +41,32 @@ class FileSelector(ttk.Frame):
 
         # Section label
         label = ttk.Label(self, text="Select Document", style='Section.TLabel')
-        label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        label.grid(row=0, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['medium']))
 
         # File display frame
-        self.file_frame = ttk.Frame(self, relief=tk.SUNKEN, borderwidth=1)
-        self.file_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+        self.file_frame = ttk.Frame(self, relief='solid', borderwidth=1)
+        self.file_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         self.file_frame.columnconfigure(1, weight=1)
+        # Apply subtle background color
+        self.file_frame.configure(style='Section.TFrame')
 
         # File icon label
-        self.icon_label = ttk.Label(self.file_frame, text="📄", font=('Segoe UI', 16))
-        self.icon_label.grid(row=0, column=0, padx=(5, 5), pady=5)
+        self.icon_label = ttk.Label(
+            self.file_frame,
+            text="📄",
+            font=AppTheme.FONTS['icon'],
+            background=AppTheme.COLORS['bg_secondary']
+        )
+        self.icon_label.grid(row=0, column=0, padx=(AppTheme.PADDING['medium'], AppTheme.PADDING['medium']), pady=AppTheme.PADDING['medium'])
 
         # File path label
         self.path_label = ttk.Label(
             self.file_frame,
             text="Drag file here or click Browse",
-            foreground='gray'
+            foreground=AppTheme.COLORS['text_muted'],
+            background=AppTheme.COLORS['bg_secondary']
         )
-        self.path_label.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 5), pady=5)
+        self.path_label.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, AppTheme.PADDING['medium']), pady=AppTheme.PADDING['medium'])
 
         # Browse button
         self.browse_button = ttk.Button(
@@ -66,10 +80,10 @@ class FileSelector(ttk.Frame):
         self.error_label = ttk.Label(
             self,
             text="",
-            foreground='red',
+            foreground=AppTheme.COLORS['error'],
             wraplength=700
         )
-        self.error_label.grid(row=3, column=0, sticky=tk.W, pady=(5, 0))
+        self.error_label.grid(row=3, column=0, sticky=tk.W, pady=(AppTheme.PADDING['medium'], 0))
         self.error_label.grid_remove()
 
     def _setup_drag_drop(self):
@@ -213,7 +227,7 @@ class FileSelector(ttk.Frame):
         # Update path label
         self.path_label.configure(
             text=filename,
-            foreground='black'
+            foreground=AppTheme.COLORS['text']
         )
 
     def set_file(self, file_path: str):
@@ -231,7 +245,7 @@ class FileSelector(ttk.Frame):
         self.icon_label.configure(text="📄")
         self.path_label.configure(
             text="Drag file here or click Browse",
-            foreground='gray'
+            foreground=AppTheme.COLORS['text_muted']
         )
         self.clear_error()
 

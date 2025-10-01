@@ -26,8 +26,8 @@ class Configuration:
     number_format: str = 'us_uk'
     proximity_rule: str = 'next_number'
     keyword_history: list[str] = field(default_factory=list)
-    window_width: int = 800
-    window_height: int = 600
+    window_width: int = 1200
+    window_height: int = 1000
     version: str = '1.0.0'
     last_updated: str = ''
 
@@ -80,8 +80,8 @@ class Configuration:
             number_format='us_uk',
             proximity_rule='next_number',
             keyword_history=[],
-            window_width=800,
-            window_height=600,
+            window_width=1200,
+            window_height=1000,
             version='1.0.0',
             last_updated=datetime.now().isoformat()
         )

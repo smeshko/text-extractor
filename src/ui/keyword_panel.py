@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from ui.theme import AppTheme
 
 
 class KeywordPanel(ttk.Frame):
@@ -22,7 +23,12 @@ class KeywordPanel(ttk.Frame):
             parent: Parent tkinter widget
             keyword_history: List of historical keywords
         """
-        super().__init__(parent, padding="10", relief=tk.RIDGE, borderwidth=1)
+        super().__init__(
+            parent,
+            padding=AppTheme.PADDING['large'],
+            relief='solid',
+            borderwidth=1
+        )
 
         self._keyword_history = keyword_history or []
         self._active_keywords = []
@@ -42,16 +48,16 @@ class KeywordPanel(ttk.Frame):
 
         # Section label
         label = ttk.Label(self, text="Keywords", style='Section.TLabel')
-        label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        label.grid(row=0, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['medium']))
 
         # Input row
         input_frame = ttk.Frame(self)
-        input_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+        input_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         input_frame.columnconfigure(0, weight=1)
 
         # Keyword input
         self.keyword_entry = ttk.Entry(input_frame, width=40)
-        self.keyword_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5))
+        self.keyword_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, AppTheme.PADDING['medium']))
         self.keyword_entry.bind('<Return>', lambda e: self._add_keyword())
 
         # Add button
@@ -64,12 +70,16 @@ class KeywordPanel(ttk.Frame):
 
         # History section
         if self._keyword_history:
-            history_label = ttk.Label(self, text="History:")
-            history_label.grid(row=2, column=0, sticky=tk.W, pady=(5, 2))
+            history_label = ttk.Label(
+                self,
+                text="History:",
+                foreground=AppTheme.COLORS['text']
+            )
+            history_label.grid(row=2, column=0, sticky=tk.W, pady=(AppTheme.PADDING['medium'], AppTheme.PADDING['small']))
 
             # History listbox with scrollbar
             history_frame = ttk.Frame(self)
-            history_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+            history_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
             history_frame.columnconfigure(0, weight=1)
 
             # Scrollbar
@@ -81,7 +91,9 @@ class KeywordPanel(ttk.Frame):
                 height=4,
                 selectmode=tk.MULTIPLE,
                 yscrollcommand=scrollbar.set,
-                exportselection=False
+                exportselection=False,
+                borderwidth=1,
+                relief='solid'
             )
             scrollbar.config(command=self.history_listbox.yview)
 
@@ -100,21 +112,30 @@ class KeywordPanel(ttk.Frame):
                 text="Add Selected from History",
                 command=self._select_from_history
             )
-            select_button.grid(row=4, column=0, sticky=tk.W, pady=(0, 5))
+            select_button.grid(row=4, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['medium']))
         else:
             self.history_listbox = None
 
         # Active keywords section
-        active_label = ttk.Label(self, text="Active Keywords:")
-        active_label.grid(row=5, column=0, sticky=tk.W, pady=(5, 2))
+        active_label = ttk.Label(
+            self,
+            text="Active Keywords:",
+            foreground=AppTheme.COLORS['text']
+        )
+        active_label.grid(row=5, column=0, sticky=tk.W, pady=(AppTheme.PADDING['medium'], AppTheme.PADDING['small']))
 
         # Active keywords frame (scrollable)
-        self.active_frame = ttk.Frame(self, relief=tk.SUNKEN, borderwidth=1)
-        self.active_frame.grid(row=6, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+        self.active_frame = ttk.Frame(self, relief='solid', borderwidth=1)
+        self.active_frame.grid(row=6, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         self.active_frame.columnconfigure(0, weight=1)
 
         # Canvas for scrolling chips
-        self.active_canvas = tk.Canvas(self.active_frame, height=60, bg='white')
+        self.active_canvas = tk.Canvas(
+            self.active_frame,
+            height=70,
+            bg=AppTheme.COLORS['bg_secondary'],
+            highlightthickness=0
+        )
         self.active_canvas.grid(row=0, column=0, sticky=(tk.W, tk.E))
 
         # Inner frame for chips
@@ -133,7 +154,11 @@ class KeywordPanel(ttk.Frame):
         clear_frame.grid(row=7, column=0, sticky=(tk.W, tk.E))
         clear_frame.columnconfigure(0, weight=1)
 
-        self.keyword_count_label = ttk.Label(clear_frame, text="0 keywords")
+        self.keyword_count_label = ttk.Label(
+            clear_frame,
+            text="0 keywords",
+            foreground=AppTheme.COLORS['text']
+        )
         self.keyword_count_label.grid(row=0, column=0, sticky=tk.W)
 
         self.clear_button = ttk.Button(
@@ -281,7 +306,7 @@ class KeywordPanel(ttk.Frame):
         # Update canvas scroll region
         self.chips_frame.update_idletasks()
 
-    def _create_chip(self, keyword: str) -> ttk.Frame:
+    def _create_chip(self, keyword: str) -> tk.Frame:
         """Create a removable keyword chip.
 
         Args:
@@ -290,20 +315,43 @@ class KeywordPanel(ttk.Frame):
         Returns:
             Chip frame widget
         """
-        chip = ttk.Frame(self.chips_frame, relief=tk.RAISED, borderwidth=1)
+        # Use tk.Frame for better background color control
+        chip = tk.Frame(
+            self.chips_frame,
+            relief='solid',
+            borderwidth=1,
+            bg=AppTheme.COLORS['primary_light'],
+            highlightbackground=AppTheme.COLORS['border'],
+            highlightthickness=1
+        )
 
         # Keyword label
-        label = ttk.Label(chip, text=keyword, padding=(5, 2))
+        label = tk.Label(
+            chip,
+            text=keyword,
+            bg=AppTheme.COLORS['primary_light'],
+            fg=AppTheme.COLORS['primary_dark'],
+            font=AppTheme.FONTS['body'],
+            padx=AppTheme.PADDING['medium'],
+            pady=AppTheme.PADDING['small']
+        )
         label.grid(row=0, column=0)
 
         # Remove button
-        remove_btn = ttk.Button(
+        remove_btn = tk.Button(
             chip,
             text="×",
-            width=2,
+            bg=AppTheme.COLORS['primary_light'],
+            fg=AppTheme.COLORS['error'],
+            font=AppTheme.FONTS['body_bold'],
+            relief='flat',
+            borderwidth=0,
+            padx=AppTheme.PADDING['small'],
+            pady=0,
+            cursor='hand2',
             command=lambda: self._remove_active_keyword(keyword)
         )
-        remove_btn.grid(row=0, column=1, padx=(0, 2))
+        remove_btn.grid(row=0, column=1, padx=(0, AppTheme.PADDING['small']))
 
         return chip
 

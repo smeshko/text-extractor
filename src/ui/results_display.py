@@ -5,6 +5,7 @@ from tkinter import ttk
 import subprocess
 import platform
 import os
+from ui.theme import AppTheme
 
 
 class ResultsDisplay(ttk.Frame):
@@ -23,7 +24,12 @@ class ResultsDisplay(ttk.Frame):
         Args:
             parent: Parent tkinter widget
         """
-        super().__init__(parent, padding="10", relief=tk.RIDGE, borderwidth=1)
+        super().__init__(
+            parent,
+            padding=AppTheme.PADDING['large'],
+            relief='solid',
+            borderwidth=1
+        )
 
         self._open_output_file_callback = None
         self._open_output_folder_callback = None
@@ -35,6 +41,9 @@ class ResultsDisplay(ttk.Frame):
 
         self._state = 'hidden'
 
+        # Create a frame to hold status-specific background
+        self._status_frame = None
+
         self._build_ui()
         self.hide()
 
@@ -43,36 +52,33 @@ class ResultsDisplay(ttk.Frame):
         # Configure grid
         self.columnconfigure(0, weight=1)
 
-        # Configure ttk style for disabled buttons
-        style = ttk.Style()
-        style.map('TButton',
-                  foreground=[('disabled', '#9CA3AF')],  # Gray text when disabled
-                  background=[('disabled', '#E5E7EB')])  # Gray background when disabled
-
-        # Message frame
-        self.message_frame = ttk.Frame(self)
-        self.message_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        self.message_frame.columnconfigure(1, weight=1)
+        # Status frame with colored background
+        self._status_frame = tk.Frame(self, relief='flat', borderwidth=0)
+        self._status_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['large']))
+        self._status_frame.columnconfigure(1, weight=1)
 
         # Icon label
-        self.icon_label = ttk.Label(
-            self.message_frame,
+        self.icon_label = tk.Label(
+            self._status_frame,
             text="",
-            font=('Segoe UI', 16)
+            font=AppTheme.FONTS['icon_large']
         )
-        self.icon_label.grid(row=0, column=0, padx=(0, 10))
+        self.icon_label.grid(row=0, column=0, padx=(AppTheme.PADDING['large'], AppTheme.PADDING['medium']), pady=AppTheme.PADDING['medium'])
 
         # Message label
-        self.message_label = ttk.Label(
-            self.message_frame,
+        self.message_label = tk.Label(
+            self._status_frame,
             text="",
-            wraplength=650
+            wraplength=650,
+            font=AppTheme.FONTS['body_bold'],
+            anchor='w',
+            justify='left'
         )
-        self.message_label.grid(row=0, column=1, sticky=tk.W)
+        self.message_label.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, AppTheme.PADDING['large']), pady=AppTheme.PADDING['medium'])
 
         # Details frame (expandable)
         self.details_frame = ttk.Frame(self)
-        self.details_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.details_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         self.details_frame.columnconfigure(0, weight=1)
         self.details_frame.grid_remove()  # Hidden by default
 
@@ -81,7 +87,7 @@ class ResultsDisplay(ttk.Frame):
             self.details_frame,
             text="",
             wraplength=700,
-            foreground='gray'
+            foreground=AppTheme.COLORS['text_muted']
         )
         self.details_label.grid(row=0, column=0, sticky=tk.W)
 
@@ -91,7 +97,7 @@ class ResultsDisplay(ttk.Frame):
             text="Show Details",
             command=self._toggle_details
         )
-        self.expand_button.grid(row=2, column=0, sticky=tk.W, pady=(0, 10))
+        self.expand_button.grid(row=2, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['large']))
         self.expand_button.grid_remove()  # Hidden by default
 
         # Action buttons
@@ -103,7 +109,7 @@ class ResultsDisplay(ttk.Frame):
             text="Open Output File",
             command=self._handle_open_file
         )
-        self.open_file_button.grid(row=0, column=0, padx=(0, 5))
+        self.open_file_button.grid(row=0, column=0, padx=(0, AppTheme.PADDING['medium']))
         self.open_file_button.state(['disabled'])  # Start disabled
 
         self.open_folder_button = ttk.Button(
@@ -111,7 +117,7 @@ class ResultsDisplay(ttk.Frame):
             text="Open Output Folder",
             command=self._handle_open_folder
         )
-        self.open_folder_button.grid(row=0, column=1, padx=(0, 5))
+        self.open_folder_button.grid(row=0, column=1, padx=(0, AppTheme.PADDING['medium']))
         self.open_folder_button.state(['disabled'])  # Start disabled
 
         self.open_log_button = ttk.Button(
@@ -196,8 +202,18 @@ class ResultsDisplay(ttk.Frame):
         self._output_folder_path = output_folder
         self._log_file_path = log_file
 
-        self.icon_label.configure(text="✓", foreground='green')
-        self.message_label.configure(text=message, foreground='green')
+        # Apply success styling
+        self._status_frame.configure(bg=AppTheme.COLORS['success_bg'])
+        self.icon_label.configure(
+            text="✓",
+            foreground=AppTheme.COLORS['success'],
+            bg=AppTheme.COLORS['success_bg']
+        )
+        self.message_label.configure(
+            text=message,
+            foreground=AppTheme.COLORS['success'],
+            bg=AppTheme.COLORS['success_bg']
+        )
 
         self.details_frame.grid_remove()
         self.expand_button.grid_remove()
@@ -236,8 +252,18 @@ class ResultsDisplay(ttk.Frame):
         self._output_folder_path = output_folder
         self._log_file_path = log_file
 
-        self.icon_label.configure(text="⚠", foreground='orange')
-        self.message_label.configure(text=message, foreground='orange')
+        # Apply warning styling
+        self._status_frame.configure(bg=AppTheme.COLORS['warning_bg'])
+        self.icon_label.configure(
+            text="⚠",
+            foreground=AppTheme.COLORS['warning'],
+            bg=AppTheme.COLORS['warning_bg']
+        )
+        self.message_label.configure(
+            text=message,
+            foreground=AppTheme.COLORS['warning'],
+            bg=AppTheme.COLORS['warning_bg']
+        )
 
         # Show details
         details_text = []
@@ -287,8 +313,18 @@ class ResultsDisplay(ttk.Frame):
         self._output_folder_path = None
         self._log_file_path = log_file
 
-        self.icon_label.configure(text="❌", foreground='red')
-        self.message_label.configure(text="Extraction failed", foreground='red')
+        # Apply error styling
+        self._status_frame.configure(bg=AppTheme.COLORS['error_bg'])
+        self.icon_label.configure(
+            text="❌",
+            foreground=AppTheme.COLORS['error'],
+            bg=AppTheme.COLORS['error_bg']
+        )
+        self.message_label.configure(
+            text="Extraction failed",
+            foreground=AppTheme.COLORS['error'],
+            bg=AppTheme.COLORS['error_bg']
+        )
 
         # Show error details
         details_text = [message]

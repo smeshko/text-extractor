@@ -15,6 +15,7 @@ from ui.keyword_panel import KeywordPanel
 from ui.settings_panel import SettingsPanel
 from ui.progress_bar import ProgressBar
 from ui.results_display import ResultsDisplay
+from ui.theme import AppTheme
 
 
 class MainWindow:
@@ -48,7 +49,7 @@ class MainWindow:
         
         self.root.title("Document Data Extractor")
         self.root.geometry(f"{config.window_width}x{config.window_height}")
-        self.root.minsize(800, 600)
+        self.root.minsize(1200, 1000)
 
         # Style configuration
         self._configure_styles()
@@ -73,26 +74,13 @@ class MainWindow:
 
     def _configure_styles(self):
         """Configure ttk styles."""
-        style = ttk.Style()
-
-        # Try to use native theme
-        try:
-            style.theme_use('vista')  # Windows
-        except:
-            try:
-                style.theme_use('aqua')  # macOS
-            except:
-                style.theme_use('default')
-
-        # Custom styles
-        style.configure('Title.TLabel', font=('Segoe UI', 12, 'bold'))
-        style.configure('Section.TLabel', font=('Segoe UI', 10, 'bold'))
-        style.configure('Primary.TButton', font=('Segoe UI', 10, 'bold'))
+        # Apply centralized theme
+        AppTheme.configure_styles(self.root)
 
     def _build_ui(self):
         """Build the complete UI layout."""
         # Main container with padding
-        main_container = ttk.Frame(self.root, padding="10")
+        main_container = ttk.Frame(self.root, padding=AppTheme.PADDING['large'])
         main_container.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         # Configure grid weights for responsive layout
@@ -104,7 +92,7 @@ class MainWindow:
 
         # Title and settings button row
         header_frame = ttk.Frame(main_container)
-        header_frame.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        header_frame.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['large']))
         header_frame.columnconfigure(0, weight=1)
 
         title_label = ttk.Label(
@@ -126,7 +114,7 @@ class MainWindow:
 
         # Settings Panel (collapsible)
         self.settings_panel = SettingsPanel(main_container, self.config)
-        self.settings_panel.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.settings_panel.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['large']))
         self.settings_panel.on_settings_changed(self._handle_settings_changed)
         self.settings_panel.collapse()  # Start collapsed
 
@@ -134,14 +122,14 @@ class MainWindow:
 
         # File Selection Area
         self.file_selector = FileSelector(main_container)
-        self.file_selector.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.file_selector.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['large']))
         self.file_selector.on_file_selected(self._handle_file_selected)
 
         current_row += 1
 
         # Keyword Panel
         self.keyword_panel = KeywordPanel(main_container, self.config.keyword_history)
-        self.keyword_panel.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.keyword_panel.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['large']))
         self.keyword_panel.on_keyword_added(self._handle_keyword_added)
         self.keyword_panel.on_keyword_selected_from_history(self._handle_keyword_from_history)
         self.keyword_panel.on_keyword_removed(self._handle_keyword_removed)
@@ -151,14 +139,14 @@ class MainWindow:
 
         # Progress Bar and Extract Button
         self.progress_bar = ProgressBar(main_container)
-        self.progress_bar.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.progress_bar.grid(row=current_row, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['large']))
         self.progress_bar.on_extract_clicked(self._handle_extract_clicked)
 
         current_row += 1
 
         # Results Display
         self.results_display = ResultsDisplay(main_container)
-        self.results_display.grid(row=current_row, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
+        self.results_display.grid(row=current_row, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, AppTheme.PADDING['large']))
         self.results_display.on_open_output_file(self._handle_open_output_file)
         self.results_display.on_open_output_folder(self._handle_open_output_folder)
         self.results_display.on_open_log_file(self._handle_open_log_file)

@@ -9,6 +9,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.configuration import Configuration
+from ui.theme import AppTheme
 
 
 class SettingsPanel(ttk.Frame):
@@ -29,7 +30,12 @@ class SettingsPanel(ttk.Frame):
             parent: Parent tkinter widget
             config: Application configuration
         """
-        super().__init__(parent, padding="10", relief=tk.RIDGE, borderwidth=1)
+        super().__init__(
+            parent,
+            padding=AppTheme.PADDING['large'],
+            relief='solid',
+            borderwidth=1
+        )
 
         self.config = config
         self._is_expanded = False
@@ -46,16 +52,20 @@ class SettingsPanel(ttk.Frame):
         self.content_frame = ttk.Frame(self)
 
         # Output folder
-        output_label = ttk.Label(self.content_frame, text="Output Folder:")
-        output_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        output_label = ttk.Label(
+            self.content_frame,
+            text="Output Folder:",
+            foreground=AppTheme.COLORS['text']
+        )
+        output_label.grid(row=0, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['small']))
 
         output_row = ttk.Frame(self.content_frame)
-        output_row.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        output_row.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         output_row.columnconfigure(0, weight=1)
 
         self.output_entry = ttk.Entry(output_row, width=50)
         self.output_entry.insert(0, self.config.output_folder)
-        self.output_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5))
+        self.output_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, AppTheme.PADDING['medium']))
 
         output_browse = ttk.Button(
             output_row,
@@ -65,16 +75,20 @@ class SettingsPanel(ttk.Frame):
         output_browse.grid(row=0, column=1)
 
         # Log directory
-        log_label = ttk.Label(self.content_frame, text="Log Directory:")
-        log_label.grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
+        log_label = ttk.Label(
+            self.content_frame,
+            text="Log Directory:",
+            foreground=AppTheme.COLORS['text']
+        )
+        log_label.grid(row=2, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['small']))
 
         log_row = ttk.Frame(self.content_frame)
-        log_row.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        log_row.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(0, AppTheme.PADDING['medium']))
         log_row.columnconfigure(0, weight=1)
 
         self.log_entry = ttk.Entry(log_row, width=50)
         self.log_entry.insert(0, self.config.log_directory)
-        self.log_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5))
+        self.log_entry.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, AppTheme.PADDING['medium']))
 
         log_browse = ttk.Button(
             log_row,
@@ -84,8 +98,12 @@ class SettingsPanel(ttk.Frame):
         log_browse.grid(row=0, column=1)
 
         # Number format
-        format_label = ttk.Label(self.content_frame, text="Number Format:")
-        format_label.grid(row=4, column=0, sticky=tk.W, pady=(0, 5))
+        format_label = ttk.Label(
+            self.content_frame,
+            text="Number Format:",
+            foreground=AppTheme.COLORS['text']
+        )
+        format_label.grid(row=4, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['small']))
 
         self.format_var = tk.StringVar(value=self.config.number_format)
         format_combo = ttk.Combobox(
@@ -95,12 +113,16 @@ class SettingsPanel(ttk.Frame):
             state='readonly',
             width=20
         )
-        format_combo.grid(row=5, column=0, sticky=tk.W, pady=(0, 10))
+        format_combo.grid(row=5, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['medium']))
         format_combo.set('US/UK Format')  # Display name
 
         # Proximity rule
-        proximity_label = ttk.Label(self.content_frame, text="Proximity Rule:")
-        proximity_label.grid(row=6, column=0, sticky=tk.W, pady=(0, 5))
+        proximity_label = ttk.Label(
+            self.content_frame,
+            text="Proximity Rule:",
+            foreground=AppTheme.COLORS['text']
+        )
+        proximity_label.grid(row=6, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['small']))
 
         self.proximity_var = tk.StringVar(value=self.config.proximity_rule)
         proximity_combo = ttk.Combobox(
@@ -110,14 +132,15 @@ class SettingsPanel(ttk.Frame):
             state='readonly',
             width=20
         )
-        proximity_combo.grid(row=7, column=0, sticky=tk.W, pady=(0, 10))
+        proximity_combo.grid(row=7, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['large']))
         proximity_combo.set('Next Number')  # Display name
 
         # Save button
         save_button = ttk.Button(
             self.content_frame,
             text="Save Settings",
-            command=self._save_settings
+            command=self._save_settings,
+            style='Primary.TButton'
         )
         save_button.grid(row=8, column=0, sticky=tk.W)
 
@@ -185,9 +208,9 @@ class SettingsPanel(ttk.Frame):
         error_label = ttk.Label(
             self.content_frame,
             text=f"❌ {message}",
-            foreground='red'
+            foreground=AppTheme.COLORS['error']
         )
-        error_label.grid(row=9, column=0, sticky=tk.W, pady=(5, 0))
+        error_label.grid(row=9, column=0, sticky=tk.W, pady=(AppTheme.PADDING['medium'], 0))
 
         # Remove after 3 seconds
         self.after(3000, error_label.destroy)
@@ -197,9 +220,9 @@ class SettingsPanel(ttk.Frame):
         success_label = ttk.Label(
             self.content_frame,
             text="✓ Settings saved",
-            foreground='green'
+            foreground=AppTheme.COLORS['success']
         )
-        success_label.grid(row=9, column=0, sticky=tk.W, pady=(5, 0))
+        success_label.grid(row=9, column=0, sticky=tk.W, pady=(AppTheme.PADDING['medium'], 0))
 
         # Remove after 2 seconds
         self.after(2000, success_label.destroy)
