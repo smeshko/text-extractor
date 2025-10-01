@@ -385,7 +385,9 @@ class AppController:
 
             results.output_path = output_result.output_path
 
+            # Save log path before finalizing
             if self.logger:
+                results.log_path = self.logger.get_log_path()
                 self.logger.log_event('INFO', f'Output written to: {output_result.output_path}')
                 self.logger.finalize('success', results)
 
@@ -415,20 +417,8 @@ class AppController:
                 # Extraction complete
                 results = msg.get('results')
                 self.state_manager.complete_processing(results)
-
-                # Determine success type
-                if results.has_errors():
-                    if len(results.matches) > 0:
-                        self._show_success(
-                            f"Extraction completed with warnings. "
-                            f"{len(results.matches)} matches found, {len(results.errors)} errors."
-                        )
-                    else:
-                        self._show_error("Extraction completed with errors.")
-                else:
-                    self._show_success(
-                        f"Extraction successful! {len(results.matches)} matches found."
-                    )
+                # Note: UI update happens via state change notification
+                # which calls results_display.show_results() with full paths
 
             elif msg_type == 'error':
                 # Extraction error

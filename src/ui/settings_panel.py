@@ -209,12 +209,16 @@ class SettingsPanel(ttk.Frame):
         if not self._is_expanded:
             self.content_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
             self._is_expanded = True
+            # Show the panel itself (in case it was hidden)
+            self.grid()
 
     def collapse(self):
         """Collapse the settings panel."""
         if self._is_expanded:
             self.content_frame.grid_remove()
             self._is_expanded = False
+            # Hide the entire panel to avoid showing empty frame
+            self.grid_remove()
 
     def toggle(self):
         """Toggle expansion state."""

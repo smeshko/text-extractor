@@ -19,6 +19,8 @@ class ExtractionResults:
         warnings: Warning messages
         processing_time: Seconds taken for extraction
         timestamp: When extraction was performed
+        output_path: Path to generated output file
+        log_path: Path to log file
     """
 
     document: Document
@@ -28,6 +30,8 @@ class ExtractionResults:
     warnings: list[str] = field(default_factory=list)
     processing_time: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)
+    output_path: str | None = None
+    log_path: str | None = None
 
     def add_match(self, match: ExtractionMatch) -> None:
         """Add successful extraction match.

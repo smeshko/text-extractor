@@ -43,6 +43,12 @@ class ResultsDisplay(ttk.Frame):
         # Configure grid
         self.columnconfigure(0, weight=1)
 
+        # Configure ttk style for disabled buttons
+        style = ttk.Style()
+        style.map('TButton',
+                  foreground=[('disabled', '#9CA3AF')],  # Gray text when disabled
+                  background=[('disabled', '#E5E7EB')])  # Gray background when disabled
+
         # Message frame
         self.message_frame = ttk.Frame(self)
         self.message_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -98,6 +104,7 @@ class ResultsDisplay(ttk.Frame):
             command=self._handle_open_file
         )
         self.open_file_button.grid(row=0, column=0, padx=(0, 5))
+        self.open_file_button.state(['disabled'])  # Start disabled
 
         self.open_folder_button = ttk.Button(
             self.actions_frame,
@@ -105,6 +112,7 @@ class ResultsDisplay(ttk.Frame):
             command=self._handle_open_folder
         )
         self.open_folder_button.grid(row=0, column=1, padx=(0, 5))
+        self.open_folder_button.state(['disabled'])  # Start disabled
 
         self.open_log_button = ttk.Button(
             self.actions_frame,
@@ -112,6 +120,7 @@ class ResultsDisplay(ttk.Frame):
             command=self._handle_open_log
         )
         self.open_log_button.grid(row=0, column=2)
+        self.open_log_button.state(['disabled'])  # Start disabled
 
     def _toggle_details(self):
         """Toggle details visibility."""
@@ -124,6 +133,10 @@ class ResultsDisplay(ttk.Frame):
 
     def _handle_open_file(self):
         """Handle open output file button."""
+        # Check if button is disabled
+        if 'disabled' in self.open_file_button.state():
+            return
+
         if self._output_file_path and os.path.exists(self._output_file_path):
             self._open_file_with_default_app(self._output_file_path)
         elif self._open_output_file_callback:
@@ -131,6 +144,10 @@ class ResultsDisplay(ttk.Frame):
 
     def _handle_open_folder(self):
         """Handle open output folder button."""
+        # Check if button is disabled
+        if 'disabled' in self.open_folder_button.state():
+            return
+
         if self._output_folder_path and os.path.exists(self._output_folder_path):
             self._open_file_with_default_app(self._output_folder_path)
         elif self._open_output_folder_callback:
@@ -138,6 +155,10 @@ class ResultsDisplay(ttk.Frame):
 
     def _handle_open_log(self):
         """Handle open log file button."""
+        # Check if button is disabled
+        if 'disabled' in self.open_log_button.state():
+            return
+
         if self._log_file_path and os.path.exists(self._log_file_path):
             self._open_file_with_default_app(self._log_file_path)
         elif self._open_log_file_callback:
@@ -181,6 +202,22 @@ class ResultsDisplay(ttk.Frame):
         self.details_frame.grid_remove()
         self.expand_button.grid_remove()
 
+        # Enable/disable buttons based on available paths
+        if output_file and os.path.exists(output_file):
+            self.open_file_button.state(['!disabled'])
+        else:
+            self.open_file_button.state(['disabled'])
+
+        if output_folder and os.path.exists(output_folder):
+            self.open_folder_button.state(['!disabled'])
+        else:
+            self.open_folder_button.state(['disabled'])
+
+        if log_file and os.path.exists(log_file):
+            self.open_log_button.state(['!disabled'])
+        else:
+            self.open_log_button.state(['disabled'])
+
         self.grid()
 
     def show_partial_success(self, message: str, warnings: list[str] = None, errors: str = None, output_file: str = None, output_folder: str = None, log_file: str = None):
@@ -219,6 +256,22 @@ class ResultsDisplay(ttk.Frame):
             self.details_frame.grid_remove()  # Collapsed by default
             self.expand_button.configure(text="Show Details")
 
+        # Enable/disable buttons based on available paths
+        if output_file and os.path.exists(output_file):
+            self.open_file_button.state(['!disabled'])
+        else:
+            self.open_file_button.state(['disabled'])
+
+        if output_folder and os.path.exists(output_folder):
+            self.open_folder_button.state(['!disabled'])
+        else:
+            self.open_folder_button.state(['disabled'])
+
+        if log_file and os.path.exists(log_file):
+            self.open_log_button.state(['!disabled'])
+        else:
+            self.open_log_button.state(['disabled'])
+
         self.grid()
 
     def show_error(self, message: str, warnings: list[str] = None, log_file: str = None):
@@ -250,12 +303,12 @@ class ResultsDisplay(ttk.Frame):
         self.details_frame.grid()  # Expanded by default for errors
         self.expand_button.configure(text="Hide Details")
 
-        # Disable file/folder buttons
+        # Disable file/folder buttons (no output files on error)
         self.open_file_button.state(['disabled'])
         self.open_folder_button.state(['disabled'])
 
-        # Enable log button if available
-        if log_file:
+        # Enable log button only if log file exists
+        if log_file and os.path.exists(log_file):
             self.open_log_button.state(['!disabled'])
         else:
             self.open_log_button.state(['disabled'])
@@ -327,3 +380,49 @@ class ResultsDisplay(ttk.Frame):
             Current state ('hidden', 'success', 'partial_success', 'error')
         """
         return self._state
+
+    def show_results(self, results):
+        """Show extraction results.
+
+        Args:
+            results: ExtractionResults object
+        """
+        # Extract paths from results
+        output_file = getattr(results, 'output_path', None)
+        log_file = getattr(results, 'log_path', None)
+
+        # Extract output folder from output file path
+        output_folder = None
+        if output_file:
+            output_folder = os.path.dirname(output_file)
+
+        # Determine which display method to call based on results
+        if results.has_errors():
+            if results.get_success_count() > 0:
+                # Partial success - some matches found but with errors
+                message = f"Extraction completed with warnings. {results.get_success_count()} matches found."
+                self.show_partial_success(
+                    message=message,
+                    warnings=results.warnings,
+                    errors=results.get_error_summary() if results.has_errors() else None,
+                    output_file=output_file,
+                    output_folder=output_folder,
+                    log_file=log_file
+                )
+            else:
+                # Error - no successful matches
+                message = f"Extraction failed. {results.get_error_summary()}"
+                self.show_error(
+                    message=message,
+                    warnings=results.warnings,
+                    log_file=log_file
+                )
+        else:
+            # Success - no errors
+            message = f"Extraction successful! {results.get_success_count()} matches found."
+            self.show_success(
+                message=message,
+                output_file=output_file,
+                output_folder=output_folder,
+                log_file=log_file
+            )
