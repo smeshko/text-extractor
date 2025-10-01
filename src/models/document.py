@@ -17,12 +17,12 @@ class DocumentState(Enum):
 
 @dataclass
 class Document:
-    """Represents a PDF or DOCX file submitted for processing.
+    """Represents a PDF, DOCX, or DOC file submitted for processing.
     
     Attributes:
         file_path: Absolute path to the document file
         filename: Original filename without path
-        file_type: Document type ("pdf" or "docx")
+        file_type: Document type ("pdf", "docx", or "doc")
         page_count: Total number of pages in document
         is_valid: Whether document is accessible and parsable
         error_message: Error description if document is invalid
@@ -47,8 +47,8 @@ class Document:
         self.file_type = self.file_type.lower()
         
         # Validate file_type
-        if self.file_type not in ("pdf", "docx"):
-            raise ValueError(f"file_type must be 'pdf' or 'docx', got: {self.file_type}")
+        if self.file_type not in ("pdf", "docx", "doc"):
+            raise ValueError(f"file_type must be 'pdf', 'docx', or 'doc', got: {self.file_type}")
     
     @classmethod
     def from_path(cls, file_path: str) -> "Document":
@@ -74,6 +74,8 @@ class Document:
             file_type = "pdf"
         elif extension == ".docx":
             file_type = "docx"
+        elif extension == ".doc":
+            file_type = "doc"
         else:
             raise ValueError(f"Unsupported file extension: {extension}")
         

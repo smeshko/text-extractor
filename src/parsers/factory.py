@@ -4,6 +4,7 @@ import os
 from .base import DocumentParser, ParsingError
 from .pdf_parser import PDFParser
 from .docx_parser import DOCXParser
+from .doc_parser import DOCParser
 
 
 class ParserFactory:
@@ -12,12 +13,14 @@ class ParserFactory:
     Supported formats:
     - PDF (.pdf)
     - DOCX (.docx)
+    - DOC (.doc)
     """
 
     # Supported extensions mapped to parser classes
     PARSER_MAP = {
         '.pdf': PDFParser,
         '.docx': DOCXParser,
+        '.doc': DOCParser,
     }
 
     @classmethod
@@ -28,7 +31,7 @@ class ParserFactory:
             file_path: Path to document file
 
         Returns:
-            DocumentParser instance (PDFParser or DOCXParser)
+            DocumentParser instance (PDFParser, DOCXParser, or DOCParser)
 
         Raises:
             ValueError: If file extension is not supported

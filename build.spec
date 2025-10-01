@@ -23,7 +23,9 @@ a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[
+        ('bin/antiword.exe', '.'),  # Bundle antiword for .doc parsing
+    ],
     hiddenimports=[
         'tkinterdnd2',
         'tkinterdnd2.TkinterDnD',
@@ -32,6 +34,7 @@ a = Analysis(
         'docx.oxml',
         'docx.text',
         'docx.shared',
+        'olefile',  # OLE file reading for .doc
     ],
     hookspath=[],
     hooksconfig={},

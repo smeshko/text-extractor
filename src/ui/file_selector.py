@@ -9,7 +9,7 @@ class FileSelector(ttk.Frame):
     """File selection area with browse and drag-and-drop support.
 
     Features:
-    - Browse button with file dialog (.pdf, .docx filter)
+    - Browse button with file dialog (.pdf, .docx, .doc filter)
     - Drag-and-drop support using tkinterdnd2
     - File path display with icon
     - Error display for invalid files
@@ -98,9 +98,10 @@ class FileSelector(ttk.Frame):
         file_path = filedialog.askopenfilename(
             title="Select Document",
             filetypes=[
-                ("Supported Documents", "*.pdf *.docx"),
+                ("Supported Documents", "*.pdf *.docx *.doc"),
                 ("PDF Files", "*.pdf"),
-                ("Word Documents", "*.docx"),
+                ("Word Documents (DOCX)", "*.docx"),
+                ("Word Documents (DOC)", "*.doc"),
                 ("All Files", "*.*")
             ]
         )
@@ -175,8 +176,8 @@ class FileSelector(ttk.Frame):
 
         # Check extension
         ext = os.path.splitext(file_path)[1].lower()
-        if ext not in ('.pdf', '.docx'):
-            self.show_error(f"Unsupported file type: {ext}. Please select a PDF or DOCX file.")
+        if ext not in ('.pdf', '.docx', '.doc'):
+            self.show_error(f"Unsupported file type: {ext}. Please select a PDF, DOCX, or DOC file.")
             return
 
         # Clear error

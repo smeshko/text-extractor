@@ -39,18 +39,18 @@
 
 ## Phase 3.1: Setup & Dependencies
 
-- [ ] **T001** Add olefile dependency to requirements.txt
+- [X] **T001** Add olefile dependency to requirements.txt
   - File: `/Users/A1E6E98/Developer/kris-extractor/requirements.txt`
   - Add line: `olefile>=0.46`
   - Purpose: OLE file reading for password detection
 
-- [ ] **T002** Obtain and bundle antiword binary
+- [X] **T002** Obtain and bundle antiword binary
   - Create directory: `/Users/A1E6E98/Developer/kris-extractor/bin/` (if not exists)
   - Download antiword.exe for Windows (~200KB)
   - Place in: `/Users/A1E6E98/Developer/kris-extractor/bin/antiword.exe`
   - Purpose: Text extraction from .doc files
 
-- [ ] **T003** Install olefile dependency for development
+- [X] **T003** Install olefile dependency for development
   - Run: `pip install olefile>=0.46`
   - Verify: `python -c "import olefile; print(olefile.__version__)"`
   - Purpose: Enable local development and testing
@@ -59,7 +59,7 @@
 
 ## Phase 3.2: Core Implementation
 
-- [ ] **T004** Create DOCParser class skeleton in src/parsers/doc_parser.py
+- [X] **T004** Create DOCParser class skeleton in src/parsers/doc_parser.py
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Implement class structure with:
     - Import statements (DocumentParser, ParseResult, ValidationResult, PageContent, etc.)
@@ -68,7 +68,7 @@
     - Method signatures: `parse()`, `validate()`, `get_page_count()`
   - Leave methods with `pass` or basic structure
 
-- [ ] **T005** Implement private helper: _get_antiword_path() in DOCParser
+- [X] **T005** Implement private helper: _get_antiword_path() in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Logic:
     - Check if `sys.frozen` (PyInstaller bundle)
@@ -76,7 +76,7 @@
     - Else: return `'antiword'` (development, assumes in PATH)
   - Purpose: Locate antiword binary in bundle or dev environment
 
-- [ ] **T006** Implement private helper: _is_password_protected() in DOCParser
+- [X] **T006** Implement private helper: _is_password_protected() in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Use olefile to check encryption flag:
     - Open OLE file
@@ -85,7 +85,7 @@
     - Return boolean
   - Per contract: Return False on any error (fail open)
 
-- [ ] **T007** Implement private helper: _extract_text_via_antiword() in DOCParser
+- [X] **T007** Implement private helper: _extract_text_via_antiword() in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Execute subprocess:
     - Get antiword path via `_get_antiword_path()`
@@ -94,7 +94,7 @@
     - Return stdout as UTF-8 string
   - Purpose: Extract plain text from .doc file
 
-- [ ] **T008** Implement private helper: _split_into_pages() in DOCParser
+- [X] **T008** Implement private helper: _split_into_pages() in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Algorithm (same as DOCXParser):
     - Accept list of paragraphs
@@ -104,7 +104,7 @@
     - Return list of PageContent objects
   - Note: Can reuse logic from DOCXParser if available
 
-- [ ] **T009** Implement validate() method in DOCParser
+- [X] **T009** Implement validate() method in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Validation sequence:
     1. Check file exists → Return ValidationResult(is_valid=False, error_type='file_not_found', ...) if not
@@ -114,7 +114,7 @@
     5. All checks pass → Return ValidationResult(is_valid=True, error_type=None, error_message=None)
   - Per contract: Never raise exceptions
 
-- [ ] **T010** Implement get_page_count() method in DOCParser
+- [X] **T010** Implement get_page_count() method in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Steps:
     - Call _extract_text_via_antiword() to get full text
@@ -123,7 +123,7 @@
     - Return integer >= 1
   - Raises: ParsingError, FileNotFoundError, PasswordProtectedError (via helpers)
 
-- [ ] **T011** Implement parse() method in DOCParser
+- [X] **T011** Implement parse() method in DOCParser
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/doc_parser.py`
   - Processing flow:
     1. Call `_check_file_exists(file_path)` (inherited method)
@@ -141,7 +141,7 @@
 
 ## Phase 3.3: Integration
 
-- [ ] **T012** [P] Update ParserFactory PARSER_MAP in src/parsers/factory.py
+- [X] **T012** [P] Update ParserFactory PARSER_MAP in src/parsers/factory.py
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/factory.py`
   - Add import: `from .doc_parser import DOCParser`
   - Modify PARSER_MAP dictionary:
@@ -154,14 +154,15 @@
     ```
   - No other changes needed (create(), is_supported() use PARSER_MAP automatically)
 
-- [ ] **T013** [P] Update file filter in ParserFactory.get_file_filter()
+- [X] **T013** [P] Update file filter in ParserFactory.get_file_filter()
   - File: `/Users/A1E6E98/Developer/kris-extractor/src/parsers/factory.py`
   - Modify method to include *.doc:
     - If hardcoded: Change to `"Supported Documents (*.pdf *.docx *.doc)"`
     - If dynamic: Ensure it generates from PARSER_MAP keys (should auto-include .doc)
   - Purpose: Show .doc files in file picker
+  - ALSO FIXED: UI file selector in src/ui/file_selector.py to accept .doc files
 
-- [ ] **T014** [P] Update build.spec to bundle antiword.exe
+- [X] **T014** [P] Update build.spec to bundle antiword.exe
   - File: `/Users/A1E6E98/Developer/kris-extractor/build.spec`
   - Modifications:
     1. Add to `datas` list: `('bin/antiword.exe', '.')`
