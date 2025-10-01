@@ -93,7 +93,9 @@ class KeywordPanel(ttk.Frame):
                 yscrollcommand=scrollbar.set,
                 exportselection=False,
                 borderwidth=1,
-                relief='solid'
+                relief='solid',
+                bg=AppTheme.COLORS['bg'],
+                fg=AppTheme.COLORS['text']
             )
             scrollbar.config(command=self.history_listbox.yview)
 
@@ -133,7 +135,7 @@ class KeywordPanel(ttk.Frame):
         self.active_canvas = tk.Canvas(
             self.active_frame,
             height=70,
-            bg=AppTheme.COLORS['bg_secondary'],
+            bg=AppTheme.COLORS['bg'],
             highlightthickness=0
         )
         self.active_canvas.grid(row=0, column=0, sticky=(tk.W, tk.E))

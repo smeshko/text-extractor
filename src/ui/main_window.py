@@ -71,6 +71,9 @@ class MainWindow:
 
         # Track window size for persistence
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+        
+        # Start monitoring system theme changes
+        AppTheme.start_theme_monitoring()
 
     def _configure_styles(self):
         """Configure ttk styles."""
@@ -360,6 +363,9 @@ class MainWindow:
 
     def _on_closing(self):
         """Handle window close event."""
+        # Stop theme monitoring
+        AppTheme.stop_theme_monitoring()
+        
         # Save window size to config
         self.config.window_width = self.root.winfo_width()
         self.config.window_height = self.root.winfo_height()
