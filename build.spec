@@ -15,12 +15,13 @@ Output:
 
 import sys
 import os
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_dynamic_libs, collect_data_files
 
 block_cipher = None
 
-# Collect all PyMuPDF dependencies
-pymupdf_datas, pymupdf_binaries, pymupdf_hiddenimports = collect_all('pymupdf')
+# Collect PyMuPDF dynamic libraries and data files
+pymupdf_binaries = collect_dynamic_libs('pymupdf')
+pymupdf_datas = collect_data_files('pymupdf')
 
 a = Analysis(
     ['src/main.py'],
@@ -33,13 +34,16 @@ a = Analysis(
         'tkinterdnd2',
         'tkinterdnd2.TkinterDnD',
         'fitz',  # PyMuPDF
+        'pymupdf',
+        'pymupdf.extra',
+        'pymupdf._extra',
         'docx',  # python-docx
         'docx.oxml',
         'docx.text',
         'docx.shared',
         'olefile',  # OLE file reading for .doc
-    ] + pymupdf_hiddenimports,
-    hookspath=[],
+    ],
+    hookspath=['.'],  # Use custom hooks from current directory
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],

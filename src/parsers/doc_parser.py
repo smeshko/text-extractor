@@ -55,12 +55,10 @@ class DOCParser(DocumentParser):
             # Extract text via antiword
             text = self._extract_text_via_antiword(file_path)
             
-            # Split text into paragraphs (by newlines/blank lines)
-            paragraphs = []
-            for para in text.split('\n'):
-                para = para.strip()
-                if para:  # Only include non-empty paragraphs
-                    paragraphs.append(para)
+            # Split text into lines (preserve all lines including empty for keyword matching)
+            lines = text.split('\n')
+            # Strip each line but keep empty lines to maintain structure
+            paragraphs = [line.strip() for line in lines]
             
             # Split into pages using word-count heuristic
             pages = self._split_into_pages(paragraphs)
@@ -229,9 +227,11 @@ class DOCParser(DocumentParser):
         antiword_exe = self._get_antiword_path()
         
         try:
-            # Run antiword and capture raw bytes
+            # Run antiword with UTF-8 encoding and no line wrapping
+            # -w 0 = no line wrapping (infinite width)
+            # This ensures consistent output across platforms
             result = subprocess.run(
-                [antiword_exe, file_path],
+                [antiword_exe, '-w', '0', file_path],
                 capture_output=True,
                 timeout=30
             )
@@ -239,13 +239,14 @@ class DOCParser(DocumentParser):
             if result.returncode != 0:
                 raise ParsingError(f"Unable to parse document. The file may be corrupted or invalid.")
             
-            # Try multiple encodings to handle Cyrillic and other character sets
+            # Try multiple encodings to handle different platforms and character sets
+            # On Windows, antiword typically outputs cp1252 (Windows Latin)
             encodings_to_try = [
-                'utf-8',           # Try UTF-8 first
+                'cp1252',          # Windows Latin (try first on Windows)
+                'utf-8',           # UTF-8 (standard)
                 'cp1251',          # Windows Cyrillic (Russian, Bulgarian, etc.)
                 'windows-1251',    # Alternative name for cp1251
                 'iso-8859-5',      # ISO Cyrillic
-                'cp1252',          # Windows Latin
                 'latin-1',         # Fallback that accepts all bytes
             ]
             
