@@ -15,15 +15,18 @@ Output:
 
 import sys
 import os
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
+# Collect all PyMuPDF dependencies
+pymupdf_datas, pymupdf_binaries, pymupdf_hiddenimports = collect_all('pymupdf')
 
 a = Analysis(
     ['src/main.py'],
     pathex=['src'],  # Add src directory to module search path
-    binaries=[],
-    datas=[
+    binaries=pymupdf_binaries,
+    datas=pymupdf_datas + [
         # ('bin/antiword.exe', '.'),  # Bundle antiword for .doc parsing (optional - download separately)
     ],
     hiddenimports=[
@@ -35,7 +38,7 @@ a = Analysis(
         'docx.text',
         'docx.shared',
         'olefile',  # OLE file reading for .doc
-    ],
+    ] + pymupdf_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
