@@ -21,10 +21,10 @@ block_cipher = None
 
 a = Analysis(
     ['src/main.py'],
-    pathex=[],
+    pathex=['src'],  # Add src directory to module search path
     binaries=[],
     datas=[
-        ('bin/antiword.exe', '.'),  # Bundle antiword for .doc parsing
+        # ('bin/antiword.exe', '.'),  # Bundle antiword for .doc parsing (optional - download separately)
     ],
     hiddenimports=[
         'tkinterdnd2',
