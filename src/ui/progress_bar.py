@@ -45,12 +45,11 @@ class ProgressBar(ttk.Frame):
         self.extract_button = ttk.Button(
             button_frame,
             text="Extract Data",
-            style='Primary.TButton',
             command=self._handle_extract_clicked,
             width=20
         )
         self.extract_button.pack()
-        self.extract_button.state(['disabled'])  # Start disabled
+        self.extract_button.config(state='disabled')  # Start disabled
 
         # Progress bar
         self.progress_bar = ttk.Progressbar(
@@ -77,7 +76,7 @@ class ProgressBar(ttk.Frame):
     def set_ready(self):
         """Set state to ready (can extract)."""
         self._state = 'ready'
-        self.extract_button.state(['!disabled'])
+        self.extract_button.config(state='normal')
         self.extract_button.configure(text="Extract Data")
         self.progress_bar.grid_remove()
         self.progress_bar.stop()
@@ -93,7 +92,7 @@ class ProgressBar(ttk.Frame):
             message: Status message to display
         """
         self._state = 'processing'
-        self.extract_button.state(['disabled'])
+        self.extract_button.config(state='disabled')
         self.extract_button.configure(text="Processing...")
         self.progress_bar.grid()
         self.progress_bar.start(10)  # Animation speed
@@ -109,7 +108,7 @@ class ProgressBar(ttk.Frame):
             message: Success message to display
         """
         self._state = 'complete'
-        self.extract_button.state(['!disabled'])
+        self.extract_button.config(state='normal')
         self.extract_button.configure(text="Extract Data")
         self.progress_bar.stop()
         self.progress_bar.grid_remove()
@@ -125,7 +124,7 @@ class ProgressBar(ttk.Frame):
             message: Error message to display
         """
         self._state = 'error'
-        self.extract_button.state(['!disabled'])
+        self.extract_button.config(state='normal')
         self.extract_button.configure(text="Try Again")
         self.progress_bar.stop()
         self.progress_bar.grid_remove()
@@ -146,11 +145,11 @@ class ProgressBar(ttk.Frame):
     def enable_extract(self):
         """Enable extract button."""
         if self._state != 'processing':
-            self.extract_button.state(['!disabled'])
+            self.extract_button.config(state='normal')
 
     def disable_extract(self):
         """Disable extract button."""
-        self.extract_button.state(['disabled'])
+        self.extract_button.config(state='disabled')
 
     def on_extract_clicked(self, callback):
         """Register extract button callback.

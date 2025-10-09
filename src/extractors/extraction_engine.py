@@ -77,36 +77,44 @@ class ExtractionEngine(BaseEngine):
                 )
 
             # Step 2: Extract numbers for each keyword match
-            if keyword_matches:
-                try:
-                    extraction_matches = self.number_extractor.extract_numbers(keyword_matches)
+            try:
+                extraction_matches = self.number_extractor.extract_numbers(keyword_matches)
 
-                    # Add all matches to results
-                    for match in extraction_matches:
-                        results.add_match(match)
+                # Create a lookup of found matches by keyword
+                matches_by_keyword = {}
+                for match in extraction_matches:
+                    if match.keyword not in matches_by_keyword:
+                        matches_by_keyword[match.keyword] = []
+                    matches_by_keyword[match.keyword].append(match)
 
-                        # Add warnings for ambiguous matches
-                        if match.warning:
-                            results.add_warning(match.warning)
-
-                except Exception as e:
-                    results.add_error(
-                        'number_extraction_error',
-                        f'Failed to extract numbers: {str(e)}',
-                        {}
-                    )
-            else:
-                # No keyword matches found - create "not found" entries
+                # Add matches in the original keyword order
                 for keyword in keywords:
-                    from models.extraction_match import ExtractionMatch
-                    results.add_match(ExtractionMatch(
-                        keyword=keyword,
-                        value='Not found',
-                        page_number=1,
-                        line_number=None,
-                        status='not_found',
-                        warning=None
-                    ))
+                    if keyword in matches_by_keyword:
+                        # Add all matches for this keyword (in case of multiple matches)
+                        for match in matches_by_keyword[keyword]:
+                            results.add_match(match)
+
+                            # Add warnings for ambiguous matches
+                            if match.warning:
+                                results.add_warning(match.warning)
+                    else:
+                        # Keyword not found - create "not found" entry
+                        from models.extraction_match import ExtractionMatch
+                        results.add_match(ExtractionMatch(
+                            keyword=keyword,
+                            value='Not found',
+                            page_number=1,
+                            line_number=None,
+                            status='not_found',
+                            warning=None
+                        ))
+
+            except Exception as e:
+                results.add_error(
+                    'number_extraction_error',
+                    f'Failed to extract numbers: {str(e)}',
+                    {}
+                )
 
             # Step 3: Extract personal information
             try:
@@ -116,8 +124,9 @@ class ExtractionEngine(BaseEngine):
                 # Add warnings for missing personal info fields
                 if not personal_info.first_name:
                     results.add_warning('First name not found in document')
-                if not personal_info.last_name:
-                    results.add_warning('Last name not found in document')
+                # Last name warning disabled - often gives false positives
+                # if not personal_info.last_name:
+                #     results.add_warning('Last name not found in document')
                 if not personal_info.id_number_prefix:
                     results.add_warning('ID number not found in document')
 

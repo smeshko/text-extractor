@@ -218,12 +218,22 @@ class AppTheme:
         # Primary button
         style.configure(
             'Primary.TButton',
-            font=cls.FONTS['body_bold'],
+            font=cls.FONTS['body_bold']
         )
         style.map(
             'Primary.TButton',
-            foreground=[('!disabled', cls.COLORS['bg']), ('disabled', cls.COLORS['text_disabled'])],
-            background=[('!disabled', cls.COLORS['primary']), ('disabled', cls.COLORS['bg_disabled'])]
+            foreground=[
+                ('disabled', cls.COLORS['text_disabled']),
+                ('pressed', 'white'),
+                ('active', 'white'),
+                ('!disabled', 'white')
+            ],
+            background=[
+                ('pressed', cls.COLORS['primary_dark']),
+                ('active', cls.COLORS['primary_dark']),
+                ('!disabled', cls.COLORS['primary']),
+                ('disabled', cls.COLORS['bg_disabled'])
+            ]
         )
 
         # Secondary button
@@ -307,8 +317,18 @@ class AppTheme:
         # Buttons
         style.map(
             'Primary.TButton',
-            foreground=[('!disabled', cls.COLORS['bg']), ('disabled', cls.COLORS['text_disabled'])],
-            background=[('!disabled', cls.COLORS['primary']), ('disabled', cls.COLORS['bg_disabled'])]
+            foreground=[
+                ('disabled', cls.COLORS['text_disabled']),
+                ('pressed', 'white'),
+                ('active', 'white'),
+                ('!disabled', 'white')
+            ],
+            background=[
+                ('pressed', cls.COLORS['primary_dark']),
+                ('active', cls.COLORS['primary_dark']),
+                ('!disabled', cls.COLORS['primary']),
+                ('disabled', cls.COLORS['bg_disabled'])
+            ]
         )
         style.map(
             'TButton',

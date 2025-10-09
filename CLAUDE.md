@@ -9,6 +9,8 @@ Auto-generated from all feature plans. Last updated: 2025-09-30
 - JSON file for keyword history persistence (KeywordHistory model) (005-i-want-the)
 - Python 3.10+ + kinter (built-in), tkinterdnd2 0.3.0+, PyMuPDF 1.23.0+, python-docx 1.1.0+, olefile 0.46+ (007-i-want-the)
 - JSON files (config.json for keyword history persistence) (007-i-want-the)
+- Python 3.10+ (existing pyproject.toml target) + kinter (built-in), existing Configuration/ConfigurationManager infrastructure (008-docs-presets-prd)
+- JSON file (config.json) - extends existing configuration persistence (008-docs-presets-prd)
 
 ## Project Structure
 ```
@@ -23,9 +25,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.10+: Follow standard conventions
 
 ## Recent Changes
+- 008-docs-presets-prd: Added Python 3.10+ (existing pyproject.toml target) + kinter (built-in), existing Configuration/ConfigurationManager infrastructure
 - 007-i-want-the: Added Python 3.10+ + kinter (built-in), tkinterdnd2 0.3.0+, PyMuPDF 1.23.0+, python-docx 1.1.0+, olefile 0.46+
 - 005-i-want-the: Added Python 3.10+ (pyproject.toml targets py310) + kinter (GUI framework), tkinterdnd2 (drag-and-drop), PyMuPDF/python-docx (document parsing)
-- 002-i-want-to: Added Python 3.10+
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

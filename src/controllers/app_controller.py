@@ -225,6 +225,97 @@ class AppController:
         except Exception as e:
             self._show_error(f"Error selecting keyword from history: {e}")
     
+    def on_preset_created(self, name: str, keywords: list[str]) -> None:
+        """Handle preset creation.
+        
+        Args:
+            name: Preset name
+            keywords: List of keywords
+        """
+        try:
+            success, error = self.config.add_preset(name, keywords)
+            if success:
+                self.config_manager.save(self.config)
+                # Refresh KeywordPanel presets (handled by main_window)
+            else:
+                self._show_error(error)
+        except Exception as e:
+            self._show_error(f"Error creating preset: {e}")
+    
+    def on_preset_loaded(self, preset_name: str) -> None:
+        """Handle preset loading.
+        
+        Args:
+            preset_name: Name of preset to load
+        """
+        try:
+            print(f"DEBUG: Loading preset '{preset_name}'")
+            preset = self.config.get_preset_by_name(preset_name)
+            if preset:
+                print(f"DEBUG: Found preset with {len(preset['keywords'])} keywords: {preset['keywords']}")
+                # Clear existing keywords
+                self.state_manager.clear_keywords()
+                print(f"DEBUG: Cleared keywords")
+                
+                # Add preset keywords
+                for keyword_text in preset['keywords']:
+                    keyword = Keyword.from_text(keyword_text, is_historical=False)
+                    self.state_manager.add_keyword(keyword)
+                    print(f"DEBUG: Added keyword '{keyword_text}'")
+                
+                print(f"DEBUG: Final state has {len(self.state_manager.get_state().active_keywords)} keywords")
+            else:
+                self._show_error(f"Preset '{preset_name}' not found")
+        except Exception as e:
+            self._show_error(f"Error loading preset: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def on_preset_updated(self, old_name: str, new_name: str, keywords: list[str]) -> None:
+        """Handle preset update.
+        
+        Args:
+            old_name: Current preset name
+            new_name: New preset name
+            keywords: Updated keyword list
+        """
+        try:
+            success, error = self.config.update_preset(old_name, new_name, keywords)
+            if success:
+                self.config_manager.save(self.config)
+                # Refresh KeywordPanel presets (handled by main_window)
+            else:
+                self._show_error(error)
+        except Exception as e:
+            self._show_error(f"Error updating preset: {e}")
+    
+    def on_preset_deleted(self, name: str) -> None:
+        """Handle preset deletion.
+        
+        Args:
+            name: Preset name
+        """
+        try:
+            if self.config.delete_preset(name):
+                self.config_manager.save(self.config)
+                # Refresh KeywordPanel presets (handled by main_window)
+            else:
+                self._show_error(f"Preset '{name}' not found")
+        except Exception as e:
+            self._show_error(f"Error deleting preset: {e}")
+    
+    def on_presets_section_toggled(self, expanded: bool) -> None:
+        """Handle presets section toggle.
+        
+        Args:
+            expanded: True if expanded, False if collapsed
+        """
+        try:
+            self.config.presets_section_expanded = expanded
+            self.config_manager.save(self.config)
+        except Exception as e:
+            self._show_error(f"Error saving preset section state: {e}")
+    
     def on_extract_clicked(self) -> None:
         """Handle extract button click."""
         print("DEBUG: Extract button clicked!")
@@ -446,9 +537,13 @@ class AppController:
         Args:
             state: New application state
         """
+        print(f"DEBUG AppController: _on_state_changed called with {len(state.active_keywords)} keywords")
+        print(f"DEBUG AppController: UI callback registered: {self._ui_update_callback is not None}")
         # Notify UI
         if self._ui_update_callback:
             self._ui_update_callback(state)
+        else:
+            print(f"DEBUG AppController: ERROR - No UI update callback registered!")
     
     def _show_error(self, message: str) -> None:
         """Show error message to user.

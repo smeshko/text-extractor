@@ -177,10 +177,11 @@ class OutputGenerator:
         # Use table format if we have full_name and age
         if results.personal_info.full_name and results.personal_info.age:
             abbrev_name = results.personal_info.get_abbreviated_name() or "???"
-            # Add semicolon after abbreviated name
+            # Add semicolon after abbreviated name and age
             abbrev_name_with_semi = f"{abbrev_name};"
+            age_with_semi = f"{results.personal_info.age};"
             headers = ["ИМЕ", "ГОДИНИ"]
-            rows = [[abbrev_name_with_semi, str(results.personal_info.age)]]
+            rows = [[abbrev_name_with_semi, age_with_semi]]
             widths = self._calculate_column_widths(headers, rows)
 
             lines.append(self._format_table_row(headers, widths))
@@ -213,13 +214,15 @@ class OutputGenerator:
         if results.matches:
             # Group matches by keyword
             keyword_groups = {}
+            keyword_order = []  # Track order keywords were added
             for match in results.matches:
                 if match.keyword not in keyword_groups:
                     keyword_groups[match.keyword] = []
+                    keyword_order.append(match.keyword)  # Preserve insertion order
                 keyword_groups[match.keyword].append(match)
 
-            # Build table: headers are keywords, rows contain values
-            headers = sorted(keyword_groups.keys())
+            # Build table: headers are keywords in order they were added (not sorted)
+            headers = keyword_order
 
             # Collect all values for each keyword (support multiple matches per keyword)
             max_matches = max(len(matches) for matches in keyword_groups.values())
@@ -236,7 +239,7 @@ class OutputGenerator:
                             value = self._add_semicolon_if_numeric(match.value)
                             row.append(value)
                         elif match.status == 'not_found':
-                            row.append("Not found")
+                            row.append("Not found;")
                         elif match.status == 'ambiguous':
                             # Add semicolon for numeric values, plus [Ambiguous] marker
                             value = self._add_semicolon_if_numeric(match.value)
@@ -258,10 +261,16 @@ class OutputGenerator:
         # Processing Summary
         lines.append("--- Processing Summary ---")
 
-        # Get unique keywords
-        unique_keywords = set(m.keyword for m in results.matches)
+        # Get unique keywords in order they appear
+        unique_keywords = []
+        seen = set()
+        for m in results.matches:
+            if m.keyword not in seen:
+                unique_keywords.append(m.keyword)
+                seen.add(m.keyword)
+        
         if unique_keywords:
-            lines.append(f"Total keywords: {len(unique_keywords)} ({', '.join(sorted(unique_keywords))})")
+            lines.append(f"Total keywords: {len(unique_keywords)} ({', '.join(unique_keywords)})")
         else:
             lines.append("Total keywords: 0")
 

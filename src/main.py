@@ -17,18 +17,17 @@ def main():
         # Load configuration
         print("Loading configuration...")
         config_manager = ConfigurationManager()
-        config = config_manager.load()
-
-        print(f"Output folder: {config.output_folder}")
-        print(f"Log directory: {config.log_directory}")
 
         # Create application controller
         print("Initializing application controller...")
         app_controller = AppController(config_manager)
         
-        # Create main window
+        print(f"Output folder: {app_controller.config.output_folder}")
+        print(f"Log directory: {app_controller.config.log_directory}")
+        
+        # Create main window (use app_controller's config so they share the same object)
         print("Creating main window...")
-        main_window = MainWindow(config)
+        main_window = MainWindow(app_controller.config)
         
         # Set up controller callbacks for UI updates
         app_controller.set_ui_update_callback(main_window.update_state)
@@ -49,6 +48,13 @@ def main():
         )
         main_window.on_keyword_removed(app_controller.on_keyword_removed)
         main_window.on_keywords_cleared(app_controller.on_keywords_cleared)
+        
+        # Preset management
+        main_window.on_preset_create(app_controller.on_preset_created)
+        main_window.on_preset_load(app_controller.on_preset_loaded)
+        main_window.on_preset_edit(app_controller.on_preset_updated)
+        main_window.on_preset_delete(app_controller.on_preset_deleted)
+        main_window.on_presets_section_toggled(app_controller.on_presets_section_toggled)
 
         # Extraction
         main_window.on_extract_clicked(app_controller.on_extract_clicked)

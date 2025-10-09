@@ -11,9 +11,21 @@
     "Еозинофили",
     "Натрий",
     "mpv",
-    "hgb"
+    "hgb",
+    "hgl"
   ],
+  "keyword_presets": [
+    {
+      "name": "test2",
+      "keywords": [
+        "hdl",
+        "hgl",
+        "hgb"
+      ]
+    }
+  ],
+  "presets_section_expanded": true,
   "window_width": 800,
   "window_height": 600,
-  "last_updated": "2025-10-09T18:26:52.605179"
+  "last_updated": "2025-10-09T19:29:42.605090"
 }

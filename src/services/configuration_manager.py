@@ -70,6 +70,20 @@ class ConfigurationManager:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
+            # Load presets with migration support
+            keyword_presets = data.get('keyword_presets', [])
+            
+            # Validate and filter corrupted presets
+            valid_presets = []
+            for preset in keyword_presets:
+                if (isinstance(preset, dict) and
+                    'name' in preset and
+                    'keywords' in preset and
+                    isinstance(preset['keywords'], list)):
+                    valid_presets.append(preset)
+                else:
+                    print(f"Skipping corrupted preset: {preset}")
+            
             # Create Configuration from loaded data
             config = Configuration(
                 output_folder=data.get('output_folder', ''),
@@ -77,6 +91,8 @@ class ConfigurationManager:
                 number_format=data.get('number_format', 'us_uk'),
                 proximity_rule=data.get('proximity_rule', 'next_number'),
                 keyword_history=data.get('keyword_history', []),
+                keyword_presets=valid_presets,
+                presets_section_expanded=data.get('presets_section_expanded', False),
                 window_width=data.get('window_width', 800),
                 window_height=data.get('window_height', 600),
                 version=data.get('version', '1.0.0'),
@@ -142,6 +158,8 @@ class ConfigurationManager:
                 'number_format': config.number_format,
                 'proximity_rule': config.proximity_rule,
                 'keyword_history': config.keyword_history,
+                'keyword_presets': config.keyword_presets,
+                'presets_section_expanded': config.presets_section_expanded,
                 'window_width': config.window_width,
                 'window_height': config.window_height,
                 'last_updated': config.last_updated
