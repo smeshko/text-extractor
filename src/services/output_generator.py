@@ -177,8 +177,10 @@ class OutputGenerator:
         # Use table format if we have full_name and age
         if results.personal_info.full_name and results.personal_info.age:
             abbrev_name = results.personal_info.get_abbreviated_name() or "???"
+            # Add semicolon after abbreviated name
+            abbrev_name_with_semi = f"{abbrev_name};"
             headers = ["ИМЕ", "ГОДИНИ"]
-            rows = [[abbrev_name, str(results.personal_info.age)]]
+            rows = [[abbrev_name_with_semi, str(results.personal_info.age)]]
             widths = self._calculate_column_widths(headers, rows)
 
             lines.append(self._format_table_row(headers, widths))
