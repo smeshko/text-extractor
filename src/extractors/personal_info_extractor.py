@@ -38,8 +38,9 @@ class PersonalInfoExtractor:
         re.compile(r'(?:Middle Name|Отчество|Patronymic|По батькові):\s*([А-Яа-яA-Za-z\s\-]+)', re.UNICODE),
     ]
 
-    # Age pattern: expects comma-separated format after name (e.g., "Name, 33")
-    AGE_PATTERN = re.compile(r',\s*(\d{1,3})(?:\s|$)', re.UNICODE)
+    # Age pattern: finds first 1-3 digit number after names
+    # More flexible - doesn't require comma separator
+    AGE_PATTERN = re.compile(r'(?:^|[^\d])(\d{1,3})(?:\s|$|[^\d])', re.UNICODE)
 
     # ID number pattern (extract first 4 digits only)
     ID_PATTERNS = [
@@ -195,17 +196,34 @@ class PersonalInfoExtractor:
         return None, None
 
     def _extract_age(self, pages: list[PageContent]) -> tuple[int | None, int | None]:
-        """Extract age from pages (comma-separated format after name).
+        """Extract age from pages - finds first valid age number after names.
 
-        Looks for pattern: "Name, 33" or similar.
+        Strategy:
+        1. First tries to find names in the text
+        2. Searches for first 1-3 digit number after name positions
+        3. Validates age is in 0-150 range
+        4. If no names found, searches entire page for valid age
 
         Returns:
             Tuple of (age, page_number) or (None, None)
         """
         for page in pages:
             page_text = page.text
-            match = self.AGE_PATTERN.search(page_text)
-            if match:
+
+            # Try to find position of names in text to search after them
+            name_position = -1
+
+            # Look for any extracted names in the text
+            for pattern in self.FIRST_NAME_PATTERNS + self.LAST_NAME_PATTERNS + self.MIDDLE_NAME_PATTERNS:
+                match = pattern.search(page_text)
+                if match:
+                    name_position = max(name_position, match.end())
+
+            # Search from after names, or from beginning if no names found
+            search_text = page_text[name_position:] if name_position >= 0 else page_text
+
+            # Find all potential age numbers (1-3 digits)
+            for match in self.AGE_PATTERN.finditer(search_text):
                 try:
                     age = int(match.group(1))
                     # Validate age range (0-150)
@@ -213,7 +231,8 @@ class PersonalInfoExtractor:
                         return age, page.page_number
                 except ValueError:
                     # Invalid age format, continue searching
-                    pass
+                    continue
+
         return None, None
 
     def _extract_id_number(self, pages: list[PageContent]) -> tuple[str | None, int | None]:
