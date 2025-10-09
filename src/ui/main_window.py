@@ -48,8 +48,9 @@ class MainWindow:
             self._has_dnd = False
         
         self.root.title("Document Data Extractor")
-        self.root.geometry(f"{config.window_width}x{config.window_height}")
-        self.root.minsize(1200, 1000)
+        # Initial size 10% smaller than previous default (1200x1000 → 1080x900)
+        self.root.geometry("1080x900")
+        # Removed minsize constraint - window is fully resizable per FR-011
 
         # Style configuration
         self._configure_styles()
