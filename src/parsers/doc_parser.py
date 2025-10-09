@@ -54,11 +54,18 @@ class DOCParser(DocumentParser):
         try:
             # Extract text via antiword
             text = self._extract_text_via_antiword(file_path)
-            
+
+            # Debug: print first 500 chars of extracted text
+            print(f"[DOC Parser] Extracted text ({len(text)} chars):")
+            print(f"[DOC Parser] First 500 chars: {text[:500]}")
+
             # Split text into lines (preserve all lines including empty for keyword matching)
-            lines = text.split('\n')
+            # Use splitlines() to handle both \n and \r\n line endings (Windows/Mac compatibility)
+            lines = text.splitlines()
             # Strip each line but keep empty lines to maintain structure
             paragraphs = [line.strip() for line in lines]
+
+            print(f"[DOC Parser] Split into {len(paragraphs)} lines")
             
             # Split into pages using word-count heuristic
             pages = self._split_into_pages(paragraphs)

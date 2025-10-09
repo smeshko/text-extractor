@@ -29,16 +29,23 @@ class ConfigurationManager:
             config_path: Path to config file (default: config.json in app directory)
         """
         if config_path is None:
-            # Default to config.json in application directory
+            # Default to config.json in user-writable location
             if getattr(sys, 'frozen', False):
-                # Running as compiled executable
-                app_dir = os.path.dirname(sys.executable)
+                # Running as compiled executable - use user's AppData on Windows
+                if sys.platform == 'win32':
+                    # Windows: %APPDATA%\DocumentExtractor\config.json
+                    app_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'DocumentExtractor')
+                else:
+                    # Other platforms: same directory as executable
+                    app_dir = os.path.dirname(sys.executable)
             else:
-                # Running as script
+                # Running as script - use project root
                 app_dir = os.path.dirname(os.path.dirname(os.path.dirname(
                     os.path.abspath(__file__)
                 )))
 
+            # Ensure config directory exists
+            os.makedirs(app_dir, exist_ok=True)
             config_path = os.path.join(app_dir, 'config.json')
 
         self.config_path = config_path
