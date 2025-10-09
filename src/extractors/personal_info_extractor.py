@@ -33,6 +33,14 @@ class PersonalInfoExtractor:
         re.compile(r'(?:Family Name):\s*([А-Яа-яA-Za-z\s\-]+)', re.UNICODE),
     ]
 
+    # Middle name patterns
+    MIDDLE_NAME_PATTERNS = [
+        re.compile(r'(?:Middle Name|Отчество|Patronymic|По батькові):\s*([А-Яа-яA-Za-z\s\-]+)', re.UNICODE),
+    ]
+
+    # Age pattern: expects comma-separated format after name (e.g., "Name, 33")
+    AGE_PATTERN = re.compile(r',\s*(\d{1,3})(?:\s|$)', re.UNICODE)
+
     # ID number pattern (extract first 4 digits only)
     ID_PATTERNS = [
         re.compile(r'(?:ID|ЕГН|ID Number|Номер):\s*(\d{4})\d*', re.UNICODE),
@@ -71,6 +79,13 @@ class PersonalInfoExtractor:
                         if result.extraction_page is None:
                             result.extraction_page = ln_page
 
+                if result.middle_name is None:
+                    middle_name, mn_page = self._extract_middle_name([page])
+                    if middle_name:
+                        result.middle_name = middle_name
+                        if result.extraction_page is None:
+                            result.extraction_page = mn_page
+
                 if result.id_number_prefix is None:
                     id_prefix, id_page = self._extract_id_number([page])
                     if id_prefix:
@@ -78,13 +93,20 @@ class PersonalInfoExtractor:
                         if result.extraction_page is None:
                             result.extraction_page = id_page
 
+                if result.age is None:
+                    age, age_page = self._extract_age([page])
+                    if age:
+                        result.age = age
+                        if result.extraction_page is None:
+                            result.extraction_page = age_page
+
                 # Stop if complete
                 if result.is_complete:
                     break
 
         # Detect character set from extracted names
-        if result.first_name or result.last_name:
-            combined_text = f"{result.first_name or ''} {result.last_name or ''}"
+        if result.first_name or result.last_name or result.middle_name:
+            combined_text = f"{result.first_name or ''} {result.middle_name or ''} {result.last_name or ''}"
             result.character_set = self._detect_character_set(combined_text)
 
         # Update is_complete flag
@@ -107,17 +129,21 @@ class PersonalInfoExtractor:
         """
         first_name, _ = self._extract_first_name([page])
         last_name, _ = self._extract_last_name([page])
+        middle_name, _ = self._extract_middle_name([page])
         id_prefix, _ = self._extract_id_number([page])
+        age, _ = self._extract_age([page])
 
         character_set = 'unknown'
-        if first_name or last_name:
-            combined = f"{first_name or ''} {last_name or ''}"
+        if first_name or last_name or middle_name:
+            combined = f"{first_name or ''} {middle_name or ''} {last_name or ''}"
             character_set = self._detect_character_set(combined)
 
         return PersonalInformation(
             first_name=first_name,
             last_name=last_name,
+            middle_name=middle_name,
             id_number_prefix=id_prefix,
+            age=age,
             character_set=character_set,
             extraction_page=page.page_number if (first_name or last_name or id_prefix) else None,
             is_complete=all([first_name, last_name, id_prefix])
@@ -151,6 +177,43 @@ class PersonalInfoExtractor:
                 if match:
                     name = match.group(1).strip()
                     return name, page.page_number
+        return None, None
+
+    def _extract_middle_name(self, pages: list[PageContent]) -> tuple[str | None, int | None]:
+        """Extract middle name from pages.
+
+        Returns:
+            Tuple of (middle_name, page_number) or (None, None)
+        """
+        for page in pages:
+            page_text = page.text
+            for pattern in self.MIDDLE_NAME_PATTERNS:
+                match = pattern.search(page_text)
+                if match:
+                    name = match.group(1).strip()
+                    return name, page.page_number
+        return None, None
+
+    def _extract_age(self, pages: list[PageContent]) -> tuple[int | None, int | None]:
+        """Extract age from pages (comma-separated format after name).
+
+        Looks for pattern: "Name, 33" or similar.
+
+        Returns:
+            Tuple of (age, page_number) or (None, None)
+        """
+        for page in pages:
+            page_text = page.text
+            match = self.AGE_PATTERN.search(page_text)
+            if match:
+                try:
+                    age = int(match.group(1))
+                    # Validate age range (0-150)
+                    if 0 <= age <= 150:
+                        return age, page.page_number
+                except ValueError:
+                    # Invalid age format, continue searching
+                    pass
         return None, None
 
     def _extract_id_number(self, pages: list[PageContent]) -> tuple[str | None, int | None]:
