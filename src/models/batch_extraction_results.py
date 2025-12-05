@@ -66,6 +66,14 @@ class BatchExtractionResults:
         """
         return len(self.warnings) > 0
 
+    def has_errors(self) -> bool:
+        """Check if batch had critical errors (no documents processed).
+
+        Returns:
+            True if no documents were successfully processed but warnings exist
+        """
+        return not self.results and len(self.warnings) > 0
+
     def get_total_processing_time(self) -> float:
         """Get total processing time for all documents.
 

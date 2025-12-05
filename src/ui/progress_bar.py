@@ -185,6 +185,7 @@ class ProgressBar(ttk.Frame):
             error_msg = state.error_messages[-1] if state.error_messages else "Extraction failed"
             self.set_error(error_msg)
         elif state.extraction_results:
+            # Both ExtractionResults and BatchExtractionResults have has_errors() method
             if state.extraction_results.has_errors():
                 self.set_error("Extraction completed with errors")
             else:
