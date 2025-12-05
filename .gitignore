@@ -218,6 +218,5 @@ __marimo__/
 
 .claude/
 # Local data
-docs/example-data/
 *.DS_Store
 .exploration-cache.json
