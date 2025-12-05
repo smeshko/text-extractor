@@ -8,6 +8,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.extraction_results import ExtractionResults
+from models.batch_extraction_results import BatchExtractionResults
 from models.configuration import Configuration
 
 
@@ -326,3 +327,129 @@ class OutputGenerator:
         # Fallback to timestamp format
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         return f"output_{timestamp}.txt"
+
+    def generate_batch(self, batch_results: BatchExtractionResults, config: Configuration) -> OutputResult:
+        """Generate batch output file from multiple extraction results.
+
+        Args:
+            batch_results: BatchExtractionResults with results from multiple documents
+            config: Configuration with output folder path
+
+        Returns:
+            OutputResult with file path and status
+        """
+        try:
+            # Validate output folder is writable
+            if not os.access(config.output_folder, os.W_OK):
+                return OutputResult(
+                    success=False,
+                    error_message=f"Output folder is not writable: {config.output_folder}"
+                )
+
+            # Generate batch filename
+            output_filename = self.generate_batch_filename()
+            output_path = os.path.join(config.output_folder, output_filename)
+
+            # Format batch output content
+            content = self.format_batch_output(batch_results)
+
+            # Write to file with UTF-8 encoding
+            with open(output_path, 'w', encoding='utf-8', newline='\r\n') as f:
+                f.write(content)
+
+            return OutputResult(
+                success=True,
+                output_path=output_path
+            )
+
+        except OSError as e:
+            return OutputResult(
+                success=False,
+                error_message=f"Insufficient disk space or I/O error: {str(e)}"
+            )
+        except Exception as e:
+            return OutputResult(
+                success=False,
+                error_message=f"Failed to generate batch output: {str(e)}"
+            )
+
+    def format_batch_output(self, batch_results: BatchExtractionResults) -> str:
+        """Format batch results as aligned semicolon-delimited table.
+
+        Args:
+            batch_results: BatchExtractionResults to format
+
+        Returns:
+            Formatted table string with header and data rows
+        """
+        # Build header: Initials, Age, then keywords
+        headers = ["Initials", "Age"] + batch_results.keywords
+
+        # Build data rows - one per document
+        rows = []
+        for result in batch_results.results:
+            row = []
+            # Initials
+            initials = result.personal_info.get_abbreviated_name() or ""
+            row.append(initials)
+            # Age
+            age = str(result.personal_info.age) if result.personal_info.age else ""
+            row.append(age)
+            # Keyword values (first occurrence only)
+            for keyword in batch_results.keywords:
+                value = self._get_first_value_for_keyword(result, keyword)
+                row.append(value)
+            rows.append(row)
+
+        # Calculate widths across header and all rows
+        widths = self._calculate_column_widths(headers, rows)
+
+        # Format header and data rows
+        lines = []
+        lines.append(self._format_batch_row(headers, widths))
+        for row in rows:
+            lines.append(self._format_batch_row(row, widths))
+
+        return '\n'.join(lines)
+
+    def _format_batch_row(self, cells: list[str], widths: list[int]) -> str:
+        """Format a single row with semicolon delimiters and padding.
+
+        Args:
+            cells: Cell values for this row
+            widths: Column widths for alignment
+
+        Returns:
+            Formatted row string with semicolons after each value
+        """
+        formatted = []
+        for i, cell in enumerate(cells):
+            width = widths[i] if i < len(widths) else len(str(cell))
+            # Left-align with padding, followed by semicolon and space
+            formatted.append(f"{str(cell).ljust(width)}; ")
+        # Join and remove trailing space but keep last semicolon
+        return ''.join(formatted).rstrip()
+
+    def _get_first_value_for_keyword(self, result: ExtractionResults, keyword: str) -> str:
+        """Get the first occurrence value for a keyword.
+
+        Args:
+            result: ExtractionResults from a single document
+            keyword: Keyword to find value for
+
+        Returns:
+            First value found for keyword, or empty string if not found
+        """
+        for match in result.matches:
+            if match.keyword.lower() == keyword.lower() and match.status == 'found':
+                return match.value or ""
+        return ""
+
+    def generate_batch_filename(self) -> str:
+        """Generate batch output filename with timestamp.
+
+        Returns:
+            Filename in format "batch_YYYY-MM-DD_HHMMSS.txt"
+        """
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        return f"batch_{timestamp}.txt"

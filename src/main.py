@@ -38,8 +38,8 @@ def main():
         # Register all callbacks
         print("Registering event handlers...")
 
-        # File selection
-        main_window.on_file_selected(app_controller.on_file_selected)
+        # File selection (multi-file support)
+        main_window.on_file_selected(app_controller.on_files_selected)
 
         # Keyword management
         main_window.on_keyword_added(app_controller.on_keyword_added)

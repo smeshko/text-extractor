@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from models.configuration import Configuration
 from models.application_state import ApplicationState
+from models.batch_extraction_results import BatchExtractionResults
 from ui.file_selector import FileSelector
 from ui.keyword_panel import KeywordPanel
 from ui.settings_panel import SettingsPanel
@@ -232,7 +233,7 @@ class MainWindow:
         """Register file selection callback.
 
         Args:
-            callback: Function(file_path: str) -> None
+            callback: Function(file_paths: list[str]) -> None
         """
         self._file_selected_callback = callback
 
@@ -349,11 +350,15 @@ class MainWindow:
         self._open_log_file_callback = callback
 
     # Internal event handlers
-    def _handle_file_selected(self, file_path: str):
-        """Handle file selection event."""
-        print(f"DEBUG MainWindow._handle_file_selected: {file_path}, callback={self._file_selected_callback is not None}")
+    def _handle_file_selected(self, file_paths: list[str]):
+        """Handle file selection event.
+
+        Args:
+            file_paths: List of selected file paths
+        """
+        print(f"DEBUG MainWindow._handle_file_selected: {len(file_paths)} files, callback={self._file_selected_callback is not None}")
         if self._file_selected_callback:
-            self._file_selected_callback(file_path)
+            self._file_selected_callback(file_paths)
 
     def _handle_keyword_added(self, keyword: str):
         """Handle keyword added event."""
@@ -443,12 +448,16 @@ class MainWindow:
             state: Current application state
         """
         print(f"DEBUG MainWindow: update_state called with {len(state.active_keywords)} active keywords")
-        
-        # Update file selector
-        if state.current_document:
-            self.file_selector.set_file(state.current_document.file_path)
-            if not state.current_document.is_valid:
-                self.file_selector.show_error(state.current_document.error_message or "Invalid file")
+
+        # Update file selector - handle both single document and multiple documents
+        if state.current_documents:
+            file_paths = [d.file_path for d in state.current_documents]
+            self.file_selector.set_files(file_paths)
+            # Show error for first invalid document (if any)
+            for doc in state.current_documents:
+                if not doc.is_valid:
+                    self.file_selector.show_error(doc.error_message or "Invalid file")
+                    break
 
         # Update keyword panel
         keyword_texts = [kw.text for kw in state.active_keywords]
@@ -462,37 +471,70 @@ class MainWindow:
         # Update results display
         if state.extraction_results:
             results = state.extraction_results
-            
+
             # Extract file paths from results
             output_file = getattr(results, 'output_path', None)
             log_file = getattr(results, 'log_path', None)
             output_folder = self.config.output_folder if output_file else None
 
-            if results.has_errors() and results.get_success_count() == 0:
-                # Full error
-                self.results_display.show_error(
-                    results.get_error_summary(),
-                    results.warnings,
-                    log_file
-                )
-            elif results.has_errors() or results.has_warnings():
-                # Partial success
-                self.results_display.show_partial_success(
-                    results.get_status_summary(),
-                    results.warnings,
-                    results.get_error_summary(),
-                    output_file,
-                    output_folder,
-                    log_file
-                )
+            # Check if this is a batch result
+            if isinstance(results, BatchExtractionResults):
+                # Batch processing results
+                doc_count = results.document_count
+                warnings = results.warnings
+
+                if not results.results and warnings:
+                    # All documents failed
+                    self.results_display.show_error(
+                        f"Batch processing failed. {len(warnings)} error(s).",
+                        warnings,
+                        log_file
+                    )
+                elif warnings:
+                    # Partial success
+                    self.results_display.show_partial_success(
+                        f"Processed {doc_count} file(s) with warnings.",
+                        warnings,
+                        None,
+                        output_file,
+                        output_folder,
+                        log_file
+                    )
+                else:
+                    # Full success
+                    self.results_display.show_success(
+                        f"Processed {doc_count} file(s) successfully.",
+                        output_file,
+                        output_folder,
+                        log_file
+                    )
             else:
-                # Full success
-                self.results_display.show_success(
-                    results.get_status_summary(),
-                    output_file,
-                    output_folder,
-                    log_file
-                )
+                # Single document results (ExtractionResults)
+                if results.has_errors() and results.get_success_count() == 0:
+                    # Full error
+                    self.results_display.show_error(
+                        results.get_error_summary(),
+                        results.warnings,
+                        log_file
+                    )
+                elif results.has_errors() or results.has_warnings():
+                    # Partial success
+                    self.results_display.show_partial_success(
+                        results.get_status_summary(),
+                        results.warnings,
+                        results.get_error_summary(),
+                        output_file,
+                        output_folder,
+                        log_file
+                    )
+                else:
+                    # Full success
+                    self.results_display.show_success(
+                        results.get_status_summary(),
+                        output_file,
+                        output_folder,
+                        log_file
+                    )
         elif state.error_messages:
             # Show state-level errors
             self.results_display.show_error(

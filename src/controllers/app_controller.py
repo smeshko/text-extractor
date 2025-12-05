@@ -12,6 +12,7 @@ from models.document import Document
 from models.keyword import Keyword
 from models.configuration import Configuration
 from models.application_state import ApplicationState, ProcessingStatus
+from models.batch_extraction_results import BatchExtractionResults
 from controllers.state_manager import StateManager
 from controllers.thread_coordinator import ThreadCoordinator, ProgressReporter
 from parsers.factory import ParserFactory
@@ -90,57 +91,76 @@ class AppController:
         self._poll_callback = callback
     
     def on_file_selected(self, file_path: str) -> None:
-        """Handle file selection.
-        
+        """Handle single file selection (backward compatibility).
+
         Args:
             file_path: Path to selected file
         """
-        print(f"DEBUG AppController.on_file_selected called with: {file_path}")
+        self.on_files_selected([file_path])
+
+    def on_files_selected(self, file_paths: list[str]) -> None:
+        """Handle multiple file selection.
+
+        Args:
+            file_paths: List of file paths to process
+        """
+        print(f"DEBUG AppController.on_files_selected called with {len(file_paths)} files")
         try:
-            # Create document from file path
-            print(f"DEBUG: Creating Document.from_path...")
-            document = Document.from_path(file_path)
-            print(f"DEBUG: Document created: {document.filename}")
-            
-            # Validate file exists
-            if not document.validate_exists():
-                self._show_error(f"File not found: {file_path}")
-                return
+            valid_documents = []
+            errors = []
 
-            # Validate file is readable
-            if not document.validate_readable():
-                self._show_error(f"File is not readable: {file_path}")
-                return
+            for file_path in file_paths:
+                # Create document from file path
+                document = Document.from_path(file_path)
 
-            # Validate file size
-            if not document.validate_size(max_size_mb=50):
-                self._show_error(f"File is too large (max 50MB): {file_path}")
-                return
-            
-            # Validate document using parser
-            parser = ParserFactory.create(file_path)
-            validation_result = parser.validate(file_path)
+                # Validate file exists
+                if not document.validate_exists():
+                    errors.append(f"File not found: {os.path.basename(file_path)}")
+                    continue
 
-            if not validation_result.is_valid:
-                document.mark_invalid(validation_result.error_message or "Unknown error")
-                self._show_error(validation_result.error_message or "Invalid document")
-                return
+                # Validate file is readable
+                if not document.validate_readable():
+                    errors.append(f"Not readable: {os.path.basename(file_path)}")
+                    continue
 
-            # Get page count
-            try:
-                page_count = parser.get_page_count(file_path)
-                document.mark_valid(page_count)
-            except Exception as e:
-                document.mark_invalid(f"Failed to get page count: {e}")
-                self._show_error(f"Failed to validate document: {e}")
-                return
+                # Validate file size
+                if not document.validate_size(max_size_mb=50):
+                    errors.append(f"Too large: {os.path.basename(file_path)}")
+                    continue
 
-            # Update state
-            self.state_manager.set_document(document)
-            print(f"DEBUG: Document set: {document.filename}")
+                # Validate document using parser
+                parser = ParserFactory.create(file_path)
+                validation_result = parser.validate(file_path)
+
+                if not validation_result.is_valid:
+                    document.mark_invalid(validation_result.error_message or "Unknown error")
+                    errors.append(f"Invalid: {os.path.basename(file_path)}")
+                    continue
+
+                # Get page count
+                try:
+                    page_count = parser.get_page_count(file_path)
+                    document.mark_valid(page_count)
+                    valid_documents.append(document)
+                except Exception as e:
+                    document.mark_invalid(f"Failed to get page count: {e}")
+                    errors.append(f"Error: {os.path.basename(file_path)}")
+                    continue
+
+            # Show errors if any
+            if errors:
+                if not valid_documents:
+                    self._show_error(f"All files invalid: {'; '.join(errors)}")
+                    return
+                # Some errors but some valid - continue with valid ones
+                print(f"DEBUG: Skipped {len(errors)} invalid files")
+
+            # Update state with valid documents
+            self.state_manager.set_documents(valid_documents)
+            print(f"DEBUG: {len(valid_documents)} documents set")
 
         except Exception as e:
-            self._show_error(f"Error selecting file: {e}")
+            self._show_error(f"Error selecting files: {e}")
             import traceback
             traceback.print_exc()
     
@@ -322,10 +342,10 @@ class AppController:
         try:
             # Check if extraction can start
             state = self.state_manager.get_state()
-            print(f"DEBUG: State - doc: {state.current_document}, keywords: {len(state.active_keywords)}, can_extract: {self.state_manager.can_start_extraction()}")
-            
+            print(f"DEBUG: State - docs: {len(state.current_documents)}, keywords: {len(state.active_keywords)}, can_extract: {self.state_manager.can_start_extraction()}")
+
             if not self.state_manager.can_start_extraction():
-                self._show_error("Cannot start extraction. Please select a file and add keywords.")
+                self._show_error("Cannot start extraction. Please select files and add keywords.")
                 return
 
             # Get current state
@@ -339,18 +359,19 @@ class AppController:
             # Initialize logger
             self.logger = ProcessingLogger(self.config.log_directory)
             keywords_text = [kw.text for kw in state.active_keywords]
-            self.logger.start_logging(state.current_document.filename, keywords_text)
+            doc_names = ", ".join(d.filename for d in state.current_documents)
+            self.logger.start_logging(f"Batch: {doc_names}", keywords_text)
 
-            # Start extraction in background thread
+            # Start batch extraction in background thread
             self.thread_coordinator.start_extraction(
-                self._perform_extraction,
-                state.current_document,
+                self._perform_batch_extraction,
+                state.current_documents,
                 state.active_keywords
             )
-            
+
             # Start polling for messages
             self._poll_worker_messages()
-            
+
         except Exception as e:
             self.state_manager.fail_processing(str(e))
             self._show_error(f"Error starting extraction: {e}")
@@ -489,6 +510,82 @@ class AppController:
         except Exception as e:
             if self.logger:
                 self.logger.log_event('ERROR', f'Extraction failed: {e}')
+                self.logger.finalize('failure', None)
+            raise
+
+    def _perform_batch_extraction(self, documents: list[Document], keywords: list[Keyword]):
+        """Perform batch extraction for multiple documents in worker thread.
+
+        Args:
+            documents: List of documents to process
+            keywords: Keywords to extract
+
+        Returns:
+            BatchExtractionResults
+        """
+        reporter = ProgressReporter(self.thread_coordinator)
+        keyword_texts = [kw.text for kw in keywords]
+        batch_results = BatchExtractionResults(keywords=keyword_texts)
+
+        try:
+            if self.logger:
+                self.logger.log_event('INFO', f'Starting batch extraction: {len(documents)} documents')
+
+            for i, document in enumerate(documents):
+                reporter.report(f'Processing file {i+1} of {len(documents)}: {document.filename}')
+
+                try:
+                    if self.logger:
+                        self.logger.log_event('INFO', f'Processing: {document.filename}')
+
+                    # Parse document
+                    parser = ParserFactory.create(document.file_path)
+                    parse_result = parser.parse(document.file_path)
+
+                    if not parse_result.success:
+                        batch_results.add_warning(f"Failed to parse: {document.filename}")
+                        if self.logger:
+                            self.logger.log_event('WARNING', f'Parse failed: {document.filename}')
+                        continue
+
+                    # Extract data
+                    extraction_engine = ExtractionEngine()
+                    results = extraction_engine.extract(parse_result.pages, keyword_texts, document)
+                    batch_results.add_result(results)
+
+                    if self.logger:
+                        self.logger.log_event('INFO', f'Extracted {len(results.matches)} matches from {document.filename}')
+
+                except Exception as e:
+                    batch_results.add_warning(f"Error processing {document.filename}: {e}")
+                    if self.logger:
+                        self.logger.log_event('ERROR', f'Error processing {document.filename}: {e}')
+
+            reporter.report('Generating batch output...')
+
+            # Generate batch output file
+            output_result = self.output_generator.generate_batch(batch_results, self.config)
+
+            if output_result.success:
+                batch_results.output_path = output_result.output_path
+                if self.logger:
+                    self.logger.log_event('INFO', f'Batch output written to: {output_result.output_path}')
+            else:
+                batch_results.add_warning(f"Failed to generate output: {output_result.error_message}")
+                if self.logger:
+                    self.logger.log_event('ERROR', f'Output generation failed: {output_result.error_message}')
+
+            if self.logger:
+                self.logger.log_event('INFO', f'Batch complete: {batch_results.document_count} documents processed')
+                self.logger.finalize('success', None)
+
+            reporter.report('Complete!')
+
+            return batch_results
+
+        except Exception as e:
+            if self.logger:
+                self.logger.log_event('ERROR', f'Batch extraction failed: {e}')
                 self.logger.finalize('failure', None)
             raise
 

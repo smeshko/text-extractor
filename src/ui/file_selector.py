@@ -11,6 +11,7 @@ class FileSelector(ttk.Frame):
 
     Features:
     - Browse button with file dialog (.pdf, .docx, .doc filter)
+    - Multi-file selection support
     - Drag-and-drop support using tkinterdnd2
     - File path display with icon
     - Error display for invalid files
@@ -30,7 +31,7 @@ class FileSelector(ttk.Frame):
         )
 
         self._file_selected_callback = None
-        self._current_file = None
+        self._current_files: list[str] = []
         self._build_ui()
         self._setup_drag_drop()
 
@@ -40,7 +41,7 @@ class FileSelector(ttk.Frame):
         self.columnconfigure(0, weight=1)
 
         # Section label
-        label = ttk.Label(self, text="Select Document", style='Section.TLabel')
+        label = ttk.Label(self, text="Select Documents", style='Section.TLabel')
         label.grid(row=0, column=0, sticky=tk.W, pady=(0, AppTheme.PADDING['medium']))
 
         # File display frame
@@ -62,7 +63,7 @@ class FileSelector(ttk.Frame):
         # File path label
         self.path_label = ttk.Label(
             self.file_frame,
-            text="Drag file here or click Browse",
+            text="Drag files here or click Browse",
             foreground=AppTheme.COLORS['text_muted'],
             background=AppTheme.COLORS['bg_secondary']
         )
@@ -108,9 +109,9 @@ class FileSelector(ttk.Frame):
             pass
 
     def _browse_file(self):
-        """Open file dialog for file selection."""
-        file_path = filedialog.askopenfilename(
-            title="Select Document",
+        """Open file dialog for multi-file selection."""
+        file_paths = filedialog.askopenfilenames(
+            title="Select Documents",
             filetypes=[
                 ("Supported Documents", "*.pdf *.docx *.doc"),
                 ("PDF Files", "*.pdf"),
@@ -120,8 +121,8 @@ class FileSelector(ttk.Frame):
             ]
         )
 
-        if file_path:
-            self._select_file(file_path)
+        if file_paths:
+            self._select_files(list(file_paths))
 
     def _handle_drop(self, event):
         """Handle file drop event.
@@ -133,8 +134,8 @@ class FileSelector(ttk.Frame):
         files = self._parse_drop_data(event.data)
 
         if files:
-            # Only accept first file
-            self._select_file(files[0])
+            # Accept all dropped files
+            self._select_files(files)
 
         # Reset background
         self.file_frame.configure(style='TFrame')
@@ -176,75 +177,120 @@ class FileSelector(ttk.Frame):
         return files
 
     def _select_file(self, file_path: str):
-        """Handle file selection.
+        """Handle single file selection (backward compatibility).
 
         Args:
             file_path: Path to selected file
         """
-        print(f"DEBUG FileSelector._select_file called with: {file_path}")
-        
-        # Validate file
-        if not os.path.exists(file_path):
-            self.show_error(f"File not found: {file_path}")
+        self._select_files([file_path])
+
+    def _select_files(self, file_paths: list[str]):
+        """Handle multi-file selection.
+
+        Args:
+            file_paths: List of file paths to select
+        """
+        print(f"DEBUG FileSelector._select_files called with {len(file_paths)} files")
+
+        valid_files = []
+        errors = []
+
+        for file_path in file_paths:
+            # Validate file exists
+            if not os.path.exists(file_path):
+                errors.append(f"File not found: {os.path.basename(file_path)}")
+                continue
+
+            # Check extension
+            ext = os.path.splitext(file_path)[1].lower()
+            if ext not in ('.pdf', '.docx', '.doc'):
+                errors.append(f"Unsupported file type: {os.path.basename(file_path)}")
+                continue
+
+            valid_files.append(file_path)
+
+        if errors and not valid_files:
+            # All files invalid
+            self.show_error("; ".join(errors))
             return
 
-        # Check extension
-        ext = os.path.splitext(file_path)[1].lower()
-        if ext not in ('.pdf', '.docx', '.doc'):
-            self.show_error(f"Unsupported file type: {ext}. Please select a PDF, DOCX, or DOC file.")
-            return
+        if errors:
+            # Some files invalid - show warning but continue with valid ones
+            self.show_error(f"Skipped: {'; '.join(errors)}")
+        else:
+            self.clear_error()
 
-        # Clear error
-        self.clear_error()
+        # Update display and state
+        self._current_files = valid_files
+        self._update_display_multi(valid_files)
 
-        # Update display
-        self._current_file = file_path
-        self._update_display(file_path)
-
-        # Notify callback
+        # Notify callback with list of valid files
         print(f"DEBUG FileSelector: callback registered = {self._file_selected_callback is not None}")
         if self._file_selected_callback:
-            print(f"DEBUG FileSelector: calling callback with {file_path}")
-            self._file_selected_callback(file_path)
+            print(f"DEBUG FileSelector: calling callback with {len(valid_files)} files")
+            self._file_selected_callback(valid_files)
 
     def _update_display(self, file_path: str):
-        """Update file display.
+        """Update file display for single file (backward compatibility).
 
         Args:
             file_path: Path to display
         """
-        # Get filename
-        filename = os.path.basename(file_path)
+        self._update_display_multi([file_path])
 
-        # Update icon based on extension
-        ext = os.path.splitext(file_path)[1].lower()
-        icon = "📄"  # PDF icon
-        if ext == '.docx':
-            icon = "📝"  # DOCX icon
+    def _update_display_multi(self, file_paths: list[str]):
+        """Update file display for multiple files.
 
-        self.icon_label.configure(text=icon)
+        Args:
+            file_paths: List of file paths to display
+        """
+        if not file_paths:
+            return
 
-        # Update path label
-        self.path_label.configure(
-            text=filename,
-            foreground=AppTheme.COLORS['text']
-        )
+        if len(file_paths) == 1:
+            # Single file - show filename
+            filename = os.path.basename(file_paths[0])
+            ext = os.path.splitext(file_paths[0])[1].lower()
+            icon = "📄"  # PDF icon
+            if ext == '.docx':
+                icon = "📝"  # DOCX icon
+
+            self.icon_label.configure(text=icon)
+            self.path_label.configure(
+                text=filename,
+                foreground=AppTheme.COLORS['text']
+            )
+        else:
+            # Multiple files - show count
+            self.icon_label.configure(text="📚")  # Multiple files icon
+            self.path_label.configure(
+                text=f"{len(file_paths)} files selected",
+                foreground=AppTheme.COLORS['text']
+            )
 
     def set_file(self, file_path: str):
-        """Set current file (called from controller).
+        """Set current file (backward compatibility).
 
         Args:
             file_path: File path to set
         """
-        self._current_file = file_path
-        self._update_display(file_path)
+        self.set_files([file_path])
+
+    def set_files(self, file_paths: list[str]):
+        """Set current files (called from controller).
+
+        Args:
+            file_paths: List of file paths to set
+        """
+        self._current_files = file_paths
+        self._update_display_multi(file_paths)
 
     def clear(self):
         """Clear file selection."""
-        self._current_file = None
+        self._current_files = []
         self.icon_label.configure(text="📄")
         self.path_label.configure(
-            text="Drag file here or click Browse",
+            text="Drag files here or click Browse",
             foreground=AppTheme.COLORS['text_muted']
         )
         self.clear_error()
@@ -267,14 +313,22 @@ class FileSelector(ttk.Frame):
         """Register file selected callback.
 
         Args:
-            callback: Function(file_path: str) -> None
+            callback: Function(file_paths: list[str]) -> None
         """
         self._file_selected_callback = callback
 
     def get_file(self) -> str | None:
-        """Get current file path.
+        """Get current file path (backward compatibility).
 
         Returns:
-            Current file path or None
+            First file path or None if no files selected
         """
-        return self._current_file
+        return self._current_files[0] if self._current_files else None
+
+    def get_files(self) -> list[str]:
+        """Get all current file paths.
+
+        Returns:
+            List of current file paths
+        """
+        return self._current_files

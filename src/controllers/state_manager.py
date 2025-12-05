@@ -8,10 +8,12 @@ from copy import deepcopy
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from typing import Union
 from models.application_state import ApplicationState, ProcessingStatus
 from models.document import Document
 from models.keyword import Keyword
 from models.extraction_results import ExtractionResults
+from models.batch_extraction_results import BatchExtractionResults
 
 
 class StateManager:
@@ -40,13 +42,21 @@ class StateManager:
             return deepcopy(self._state)
 
     def set_document(self, document: Document) -> None:
-        """Set current document.
+        """Set current document (backward compatibility).
 
         Args:
             document: Document to set
         """
+        self.set_documents([document])
+
+    def set_documents(self, documents: list[Document]) -> None:
+        """Set current documents.
+
+        Args:
+            documents: List of documents to set
+        """
         with self._lock:
-            self._state.set_document(document)
+            self._state.set_documents(documents)
             self._notify_observers()
 
     def add_keyword(self, keyword: Keyword) -> None:
@@ -89,11 +99,11 @@ class StateManager:
             self._notify_observers()
             return True
 
-    def complete_processing(self, results: ExtractionResults) -> None:
+    def complete_processing(self, results: Union[ExtractionResults, BatchExtractionResults]) -> None:
         """Complete processing with results.
 
         Args:
-            results: Extraction results
+            results: Extraction results (single or batch)
         """
         with self._lock:
             self._state.complete_processing(results)
