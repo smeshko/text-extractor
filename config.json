@@ -12,7 +12,8 @@
     "Натрий",
     "mpv",
     "hgb",
-    "hgl"
+    "hgl",
+    "тромбоцити"
   ],
   "keyword_presets": [
     {
@@ -25,7 +26,7 @@
     }
   ],
   "presets_section_expanded": true,
-  "window_width": 800,
-  "window_height": 600,
-  "last_updated": "2025-10-09T19:29:42.605090"
+  "window_width": 1080,
+  "window_height": 900,
+  "last_updated": "2026-02-01T11:46:26.578001"
 }
